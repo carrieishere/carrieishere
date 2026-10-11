@@ -167,7 +167,7 @@ export function createIntroLinePicker() {
     (_, index) => index,
   );
   let phase: "first" | "second" | "rest" | "loop" = "first";
-  let rest = shuffle(others.slice(2));
+  const rest = shuffle(others.slice(2));
   let pool: number[] = [];
   let last = -1;
   let othersSinceSpecial = 0;
