@@ -227,8 +227,15 @@ export function MobileHome({ active = true }: { active?: boolean }) {
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-white" onClick={onBlank}>
-      <header className="relative z-0 overflow-visible bg-white px-[6%] pb-5 pt-[18%]">
+    <div
+      className={`relative w-full bg-white ${
+        active
+          ? "h-full overflow-y-auto overscroll-y-contain snap-y snap-proximity"
+          : "min-h-screen overflow-hidden"
+      }`}
+      onClick={onBlank}
+    >
+      <header className="relative z-0 snap-start overflow-visible bg-white px-[6%] pb-5 pt-[18%]">
         <div className="flex flex-col items-center text-center">
           <p className="font-creato-black text-[clamp(6px,2vw,9px)] leading-[1] tracking-[0.02em] text-[#4a4a4a]">
             CARRIE YANG
@@ -323,19 +330,51 @@ export function MobileHome({ active = true }: { active?: boolean }) {
 }
 
 function MobileContactFooter({ active }: { active: boolean }) {
-  const bubbles = useMobileIntroCarousel(active);
+  const footerRef = useRef<HTMLElement>(null);
+  const [arrived, setArrived] = useState(false);
+  const [talk, setTalk] = useState(false);
+  const bubbles = useMobileIntroCarousel(active && talk);
+
+  useEffect(() => {
+    if (!active) {
+      setArrived(false);
+      setTalk(false);
+      return;
+    }
+    const node = footerRef.current;
+    if (!node) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) setArrived(true);
+      },
+      { threshold: 0.22 },
+    );
+    io.observe(node);
+    return () => io.disconnect();
+  }, [active]);
+
+  useEffect(() => {
+    if (!arrived) return;
+    const timer = window.setTimeout(() => setTalk(true), 520);
+    return () => window.clearTimeout(timer);
+  }, [arrived]);
 
   return (
     <footer
-      className="relative z-20 overflow-visible bg-black px-5 pb-[max(8.5rem,env(safe-area-inset-bottom))] pt-16 text-white"
+      ref={footerRef}
+      className="relative z-20 snap-end overflow-visible bg-black px-5 pb-[max(8.5rem,env(safe-area-inset-bottom))] pt-16 text-white"
       onClick={(event) => event.stopPropagation()}
     >
       <div className="relative mx-auto flex min-h-[9.5rem] max-w-[22rem] items-center justify-center">
-        <div
+        <motion.div
           className="pointer-events-none absolute bottom-[calc(100%+10px)] right-0 z-20"
-          style={{
-            transform: `translate(${MOBILE_FOOTER_FIXED.bx}px, ${MOBILE_FOOTER_FIXED.by}px)`,
+          initial={false}
+          animate={{
+            opacity: arrived ? 1 : 0,
+            x: MOBILE_FOOTER_FIXED.bx,
+            y: arrived ? MOBILE_FOOTER_FIXED.by : MOBILE_FOOTER_FIXED.by + 12,
           }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
         >
           <Capsule
             tail={MOBILE_FOOTER_FIXED.tail}
@@ -344,7 +383,7 @@ function MobileContactFooter({ active }: { active: boolean }) {
           >
             {MOBILE_FIXED_BUBBLE}
           </Capsule>
-        </div>
+        </motion.div>
 
         <AnimatePresence>
           {bubbles.map((bubble) => {
@@ -374,15 +413,20 @@ function MobileContactFooter({ active }: { active: boolean }) {
           })}
         </AnimatePresence>
 
-        <a
+        <motion.a
           href={MOBILE_MAILTO}
           className="relative z-30 whitespace-nowrap font-creato-black text-[clamp(1.7rem,8.4vw,2.75rem)] leading-none tracking-tight text-white"
-          style={{
-            transform: `translate(${MOBILE_FOOTER_HANDLE.bx}px, ${MOBILE_FOOTER_HANDLE.by}px)`,
+          initial={false}
+          animate={{
+            opacity: arrived ? 1 : 0,
+            x: MOBILE_FOOTER_HANDLE.bx,
+            y: arrived ? MOBILE_FOOTER_HANDLE.by : MOBILE_FOOTER_HANDLE.by + 12,
           }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          style={{ pointerEvents: arrived ? "auto" : "none" }}
         >
           @CARRIEYHERE
-        </a>
+        </motion.a>
       </div>
     </footer>
   );
