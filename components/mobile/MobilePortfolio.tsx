@@ -15,8 +15,8 @@ export function MobilePortfolio() {
     const body = document.body;
     const prevHtmlOverflow = html.style.overflow;
     const prevBodyOverflow = body.style.overflow;
-    html.style.overflow = sceneReady ? "" : "hidden";
-    body.style.overflow = sceneReady ? "" : "hidden";
+    html.style.overflow = sceneReady ? "auto" : "hidden";
+    body.style.overflow = sceneReady ? "auto" : "hidden";
     return () => {
       html.style.overflow = prevHtmlOverflow;
       body.style.overflow = prevBodyOverflow;
@@ -31,7 +31,11 @@ export function MobilePortfolio() {
       }`}
     >
       <motion.div
-        className="absolute inset-0 bg-white"
+        className={
+          sceneReady
+            ? "relative overflow-visible bg-white"
+            : "absolute inset-0 overflow-hidden bg-white"
+        }
         style={{
           clipPath: intro.clipActive ? intro.clipPath : "none",
           willChange: intro.masking ? "clip-path" : undefined,
@@ -39,14 +43,14 @@ export function MobilePortfolio() {
         }}
       >
         <motion.div
-          className="h-full min-h-screen w-full"
+          className="min-h-full w-full"
           style={{
             filter: intro.isFiltering ? intro.filter : undefined,
             transform: intro.isFiltering ? "translateZ(0)" : undefined,
             willChange: intro.isFiltering ? "filter" : undefined,
           }}
         >
-          <MobileHome />
+          <MobileHome active={sceneReady} />
         </motion.div>
       </motion.div>
 

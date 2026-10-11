@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useDeviceMode } from "@/hooks/useDeviceMode";
+import { useDeviceMode, useMobileFramePreview } from "@/hooks/useDeviceMode";
 
 const DesktopWorkspace = dynamic(
   () =>
@@ -19,11 +19,24 @@ const MobilePortfolio = dynamic(
   { ssr: false },
 );
 
+const MobilePreviewFrame = dynamic(
+  () =>
+    import("@/components/mobile/MobilePreviewFrame").then((mod) => ({
+      default: mod.MobilePreviewFrame,
+    })),
+  { ssr: false },
+);
+
 export default function HomePage() {
   const mode = useDeviceMode();
+  const framePreview = useMobileFramePreview();
 
-  if (mode === null) {
+  if (mode === null || framePreview === null) {
     return <main className="h-screen w-full bg-black" aria-hidden />;
+  }
+
+  if (framePreview) {
+    return <MobilePreviewFrame />;
   }
 
   return mode === "mobile" ? <MobilePortfolio /> : <DesktopWorkspace />;
