@@ -7,14 +7,13 @@ import {
   useState,
   type MouseEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
 import {
   animate,
   AnimatePresence,
   motion,
   useMotionValue,
-  useTransform,
-  type MotionValue,
 } from "framer-motion";
 import {
   MOBILE_ART_HEIGHT,
@@ -75,12 +74,20 @@ const POP = {
   transition: { duration: 0.2 },
 };
 
-function rubberPull(distance: number, limit = 56) {
+function rubberPull(distance: number, limit = 72) {
   if (distance <= 0) return 0;
-  return (distance * limit) / (distance + limit * 1.65);
+  return (distance * limit) / (distance + limit * 1.45);
 }
 
-const FOOTER_SPRING = {
+function rubberInverse(visual: number, limit = 72) {
+  const x = Math.min(Math.abs(visual), limit - 0.5);
+  if (x <= 0) return 0;
+  return (x * limit * 1.45) / (limit - x);
+}
+
+const FOOTER_FADE_PX = 96;
+
+const BOUNCE_SPRING = {
   type: "spring" as const,
   stiffness: 280,
   damping: 36,
@@ -240,13 +247,7 @@ export function MobileHome({ active = true }: { active?: boolean }) {
   };
 
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const pull = useMotionValue(0);
-  const scrollMix = useMotionValue(0);
-  const pageBg = useTransform(
-    scrollMix,
-    [0, 1],
-    ["rgb(255, 255, 255)", "rgb(0, 0, 0)"],
-  );
+  const shift = useMotionValue(0);
 
   useEffect(() => {
     if (!active) return;
@@ -256,6 +257,7 @@ export function MobileHome({ active = true }: { active?: boolean }) {
       "(prefers-reduced-motion: reduce)",
     ).matches;
 
+    const atTop = () => el.scrollTop <= 10;
     const atBottom = () =>
       el.scrollHeight - el.scrollTop - el.clientHeight <= 10;
 
@@ -263,21 +265,24 @@ export function MobileHome({ active = true }: { active?: boolean }) {
     let overflow = 0;
     let wheelTimer = 0;
 
-    const paintPull = () => pull.set(rubberPull(overflow));
+    const paintShift = () => {
+      if (overflow > 0) shift.set(-rubberPull(overflow));
+      else if (overflow < 0) shift.set(rubberPull(-overflow));
+      else shift.set(0);
+    };
 
     const release = () => {
       overflow = 0;
-      void animate(pull, 0, FOOTER_SPRING);
-    };
-
-    const onScroll = () => {
-      const max = Math.max(1, el.scrollHeight - el.clientHeight);
-      scrollMix.set(el.scrollTop / max);
+      void animate(shift, 0, BOUNCE_SPRING);
     };
 
     const onTouchStart = (event: TouchEvent) => {
       lastY = event.touches[0]?.clientY ?? 0;
-      overflow = 0;
+      shift.stop();
+      const y = shift.get();
+      if (y > 0.5) overflow = -rubberInverse(y);
+      else if (y < -0.5) overflow = rubberInverse(-y);
+      else overflow = 0;
     };
 
     const onTouchMove = (event: TouchEvent) => {
@@ -285,54 +290,56 @@ export function MobileHome({ active = true }: { active?: boolean }) {
       const y = event.touches[0]?.clientY ?? lastY;
       const delta = lastY - y;
       lastY = y;
-      const pulling = overflow > 0 || (atBottom() && delta > 0);
-      if (!pulling) return;
-      overflow = Math.max(0, overflow + delta);
-      if (overflow <= 0) {
-        overflow = 0;
-        pull.set(0);
+      const pullingBottom = overflow > 0 || (atBottom() && delta > 0);
+      const pullingTop = overflow < 0 || (atTop() && delta < 0);
+      if (!pullingBottom && !pullingTop) return;
+      overflow += delta;
+      if (pullingTop && overflow > 0) overflow = 0;
+      if (pullingBottom && overflow < 0) overflow = 0;
+      if (overflow === 0) {
+        shift.set(0);
         return;
       }
       if (event.cancelable) event.preventDefault();
-      paintPull();
+      paintShift();
     };
 
     const onTouchEnd = () => {
-      if (overflow > 0 || pull.get() > 0.2) release();
+      if (overflow !== 0 || Math.abs(shift.get()) > 0.2) release();
     };
 
     const onWheel = (event: WheelEvent) => {
       if (reduced) return;
-      const pushing = overflow > 0 || (atBottom() && event.deltaY > 0);
-      if (!pushing) return;
-      overflow = Math.max(0, overflow + event.deltaY);
-      if (overflow > 0) {
-        if (event.cancelable) event.preventDefault();
-        paintPull();
-      } else {
-        pull.set(0);
+      const pullingBottom = overflow > 0 || (atBottom() && event.deltaY > 0);
+      const pullingTop = overflow < 0 || (atTop() && event.deltaY < 0);
+      if (!pullingBottom && !pullingTop) return;
+      overflow += event.deltaY;
+      if (pullingTop && overflow > 0) overflow = 0;
+      if (pullingBottom && overflow < 0) overflow = 0;
+      if (overflow === 0) {
+        shift.set(0);
+        return;
       }
+      if (event.cancelable) event.preventDefault();
+      paintShift();
       window.clearTimeout(wheelTimer);
       wheelTimer = window.setTimeout(release, 80);
     };
 
-    el.addEventListener("scroll", onScroll, { passive: true });
     el.addEventListener("touchstart", onTouchStart, { passive: true });
     el.addEventListener("touchmove", onTouchMove, { passive: false });
     el.addEventListener("touchend", onTouchEnd);
     el.addEventListener("touchcancel", onTouchEnd);
     el.addEventListener("wheel", onWheel, { passive: false });
-    onScroll();
     return () => {
       window.clearTimeout(wheelTimer);
-      el.removeEventListener("scroll", onScroll);
       el.removeEventListener("touchstart", onTouchStart);
       el.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", onTouchEnd);
       el.removeEventListener("touchcancel", onTouchEnd);
       el.removeEventListener("wheel", onWheel);
     };
-  }, [active, pull, scrollMix]);
+  }, [active, shift]);
 
   const onBlank = (event: MouseEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest("[data-mobile-hotspot]")) return;
@@ -344,12 +351,12 @@ export function MobileHome({ active = true }: { active?: boolean }) {
       ref={scrollerRef}
       className={`relative w-full ${
         active
-          ? "mobile-home-scroll h-full overflow-y-auto overscroll-y-contain"
-          : "min-h-screen overflow-hidden"
+          ? "mobile-home-scroll h-full overflow-y-auto overscroll-y-contain bg-white"
+          : "min-h-screen overflow-hidden bg-white"
       }`}
-      style={{ backgroundColor: pageBg }}
       onClick={onBlank}
     >
+      <motion.div style={{ y: shift }}>
       <header className="relative z-0 overflow-visible bg-white px-[6%] pb-5 pt-[18%]">
         <div className="flex flex-col items-center text-center">
           <p className="font-creato-black text-[clamp(6px,2vw,9px)] leading-[1] tracking-[0.02em] text-[#4a4a4a]">
@@ -436,7 +443,8 @@ export function MobileHome({ active = true }: { active?: boolean }) {
         ))}
       </div>
 
-      <MobileContactFooter active={active} pull={pull} />
+      <MobileContactFooter active={active} scrollerRef={scrollerRef} />
+      </motion.div>
     </motion.div>
   );
 }
@@ -451,10 +459,10 @@ function hapticTap() {
 
 function MobileContactFooter({
   active,
-  pull,
+  scrollerRef,
 }: {
   active: boolean;
-  pull: MotionValue<number>;
+  scrollerRef: RefObject<HTMLDivElement | null>;
 }) {
   const footerRef = useRef<HTMLElement>(null);
   const playingRef = useRef(false);
@@ -465,7 +473,7 @@ function MobileContactFooter({
   const [lineIndex, setLineIndex] = useState(0);
   const [hint, setHint] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const footerY = useTransform(pull, (value) => -value);
+  const fade = useMotionValue(0);
   const text = MOBILE_FOOTER_LINES[lineIndex] ?? MOBILE_FOOTER_LINES[0]!;
 
   useEffect(() => {
@@ -473,6 +481,32 @@ function MobileContactFooter({
       window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     );
   }, []);
+
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    const footer = footerRef.current;
+    if (!active || !scroller || !footer) return;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const paint = () => {
+      if (reduced) {
+        fade.set(1);
+        return;
+      }
+      const frame = scroller.getBoundingClientRect();
+      const box = footer.getBoundingClientRect();
+      const entered = frame.bottom - box.top;
+      fade.set(Math.max(0, Math.min(1, entered / FOOTER_FADE_PX)));
+    };
+    paint();
+    scroller.addEventListener("scroll", paint, { passive: true });
+    window.addEventListener("resize", paint);
+    return () => {
+      scroller.removeEventListener("scroll", paint);
+      window.removeEventListener("resize", paint);
+    };
+  }, [active, fade, scrollerRef]);
 
   useEffect(() => {
     if (!active) {
@@ -551,7 +585,7 @@ function MobileContactFooter({
     <motion.footer
       ref={footerRef}
       className="relative z-20 overflow-visible bg-black px-5 pt-12 pb-[max(4.5rem,env(safe-area-inset-bottom))] text-white"
-      style={{ y: footerY }}
+      style={{ opacity: fade }}
       onClick={(event) => event.stopPropagation()}
     >
       <button
