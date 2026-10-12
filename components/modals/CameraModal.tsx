@@ -106,36 +106,33 @@ export function CameraModal({
   }, [onClose, step]);
 
   useEffect(() => {
-    if (!visible) return;
     let cancelled = false;
     let timer = 0;
-    const steps: Array<{ delay: number; caption: string | null }> = [
-      { delay: CAPTION_DELAY_MS, caption: CAPTION_PHRASES[0] },
-      { delay: CAPTION_MS, caption: null },
-      { delay: CAPTION_GAP_MS, caption: CAPTION_PHRASES[1] },
-      { delay: CAPTION_MS, caption: null },
-    ];
-    let stepIndex = 0;
+    const wait = (ms: number) =>
+      new Promise<void>((resolve) => {
+        timer = window.setTimeout(resolve, ms);
+      });
 
-    const run = () => {
-      if (cancelled || stepIndex >= steps.length) return;
-      const next = steps[stepIndex]!;
-      stepIndex += 1;
-      timer = window.setTimeout(() => {
-        if (cancelled) return;
-        setCaption(next.caption);
-        run();
-      }, next.delay);
+    const run = async () => {
+      await wait(CAPTION_DELAY_MS);
+      while (!cancelled) {
+        for (const line of CAPTION_PHRASES) {
+          if (cancelled) return;
+          setCaption(line);
+          await wait(CAPTION_MS);
+          if (cancelled) return;
+          setCaption(null);
+          await wait(CAPTION_GAP_MS);
+        }
+      }
     };
 
-    setCaption(null);
-    run();
-
+    void run();
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [visible]);
+  }, []);
 
   return (
     <motion.div
