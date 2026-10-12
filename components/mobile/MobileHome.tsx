@@ -24,11 +24,14 @@ import {
   MOBILE_EMAIL,
   MOBILE_DOME_CLIP,
   MOBILE_DOME_PIN_TOP,
+  MOBILE_WORDMARK_TRACKING,
   MOBILE_FOOTER_BUBBLE,
   MOBILE_FOOTER_ENTER_S,
   MOBILE_FOOTER_EXIT_MS,
   MOBILE_FOOTER_GAP_MS,
   MOBILE_FOOTER_LINES,
+  MOBILE_FOOTER_TYPING_MAX_MS,
+  MOBILE_FOOTER_TYPING_MIN_MS,
   MOBILE_HOTSPOTS,
   MOBILE_INSTAGRAM,
   MOBILE_ITEM_HINTS,
@@ -122,6 +125,16 @@ function JustifiedLine({ text }: { text: string }) {
         <span key={`${word}-${index}`}>{word}</span>
       ))}
     </p>
+  );
+}
+
+function TypingDots() {
+  return (
+    <span className="mobile-typing" aria-hidden>
+      <i />
+      <i />
+      <i />
+    </span>
   );
 }
 
@@ -494,40 +507,41 @@ function InstagramWordmark({
   reduceMotion: boolean;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
-  const [show, setShow] = useState(false);
+  const opacity = useMotionValue(1);
 
   useEffect(() => {
     const box = boxRef.current;
-    const root = scrollerRef.current;
-    if (!box || !root) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if ((entry?.intersectionRatio ?? 0) >= 0.55) setShow(true);
-      },
-      { root, threshold: [0, 0.25, 0.4, 0.55, 0.75, 1] },
-    );
-    io.observe(box);
-    return () => io.disconnect();
-  }, [scrollerRef]);
+    const scroller = scrollerRef.current;
+    if (!box || !scroller || reduceMotion) {
+      opacity.set(1);
+      return;
+    }
+    const update = () => {
+      const rect = box.getBoundingClientRect();
+      const view = scroller.getBoundingClientRect();
+      const span = Math.max(rect.height, 1);
+      const next = (view.bottom - rect.top) / span;
+      opacity.set(Math.max(0, Math.min(1, next)));
+    };
+    scroller.addEventListener("scroll", update, { passive: true });
+    update();
+    return () => scroller.removeEventListener("scroll", update);
+  }, [scrollerRef, reduceMotion, opacity]);
 
   return (
     <div
       ref={boxRef}
-      className="relative z-10 overflow-hidden bg-black px-[2.4%] pb-1 pt-5 font-creato-black text-[13vw] leading-[0.82] tracking-[-0.082em]"
+      className="relative z-10 bg-black px-[2.4%] pb-1 pt-5 font-creato-black text-[13vw] leading-[0.82]"
+      style={{ letterSpacing: MOBILE_WORDMARK_TRACKING }}
     >
       <motion.a
         href={MOBILE_INSTAGRAM}
         target="_blank"
         rel="noreferrer"
         aria-label="Instagram @carrieyhere"
-        className="block will-change-transform"
+        className="block cursor-pointer"
         onClick={(event) => event.stopPropagation()}
-        initial={{ y: "100%" }}
-        animate={{ y: show || reduceMotion ? "0%" : "100%" }}
-        transition={{
-          duration: reduceMotion ? 0 : 0.86,
-          ease: [0.16, 1, 0.3, 1],
-        }}
+        style={reduceMotion ? undefined : { opacity }}
       >
         <span className="block w-full whitespace-nowrap text-[#9a9a9a]">
           @CARRIEYHERE
@@ -561,9 +575,10 @@ function MobileContactFooter({
   const visibleRef = useRef(false);
   const heldRef = useRef(held);
   const indexRef = useRef(0);
+  const typedOnceRef = useRef(false);
   heldRef.current = held;
   const [playing, setPlaying] = useState(false);
-  const [phase, setPhase] = useState<"off" | "line">("off");
+  const [phase, setPhase] = useState<"off" | "typing" | "line">("off");
   const [lineIndex, setLineIndex] = useState(0);
   const [hint, setHint] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -603,6 +618,7 @@ function MobileContactFooter({
   useEffect(() => {
     if (!active) {
       visibleRef.current = false;
+      typedOnceRef.current = false;
       indexRef.current = 0;
       talk();
       return;
@@ -636,6 +652,15 @@ function MobileContactFooter({
       while (alive && playingRef.current) {
         const index = indexRef.current;
         setLineIndex(index);
+        if (!typedOnceRef.current) {
+          setPhase("typing");
+          const typing =
+            MOBILE_FOOTER_TYPING_MIN_MS +
+            Math.random() *
+              (MOBILE_FOOTER_TYPING_MAX_MS - MOBILE_FOOTER_TYPING_MIN_MS);
+          if (!(await wait(typing))) break;
+          typedOnceRef.current = true;
+        }
         setPhase("line");
         if (!(await wait(mobileFooterDwellMs(MOBILE_FOOTER_LINES[index]!)))) break;
         setPhase("off");
@@ -674,7 +699,7 @@ function MobileContactFooter({
         reduceMotion={reduceMotion}
       />
       <div
-        className="relative z-20 overflow-hidden"
+        className="pointer-events-none relative z-20 overflow-hidden"
         style={{
           height: `calc(${MOBILE_DOME_CLIP} + 12rem)`,
           marginTop: "-12rem",
@@ -693,12 +718,29 @@ function MobileContactFooter({
         <button
           type="button"
           aria-label="Email Carrie"
-          className="absolute left-1/2 flex w-full max-w-[22rem] -translate-x-1/2 flex-col items-center bg-transparent p-0"
+          className="pointer-events-auto absolute left-1/2 h-[7.4rem] w-full max-w-[22rem] -translate-x-1/2 bg-transparent p-0"
           style={{ top: MOBILE_DOME_PIN_TOP }}
           onClick={() => void onContact()}
         >
-            <div className="flex min-h-[3.6rem] w-full items-end justify-center pb-2">
+            <div className="absolute inset-x-0 top-0 flex h-[4.85rem] items-end justify-center pb-2">
               <AnimatePresence mode="wait">
+                {phase === "typing" ? (
+                  <motion.div
+                    key="typing"
+                    className="flex justify-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: reduceMotion ? 0.25 : 0.12 }}
+                  >
+                    <Capsule
+                      className="px-[0.9rem] py-[0.48rem]"
+                      tail={MOBILE_FOOTER_BUBBLE.tail}
+                    >
+                      <TypingDots />
+                    </Capsule>
+                  </motion.div>
+                ) : null}
                 {phase === "line" ? (
                   <motion.div
                     key={`line-${lineIndex}`}
@@ -729,9 +771,12 @@ function MobileContactFooter({
                 ) : null}
               </AnimatePresence>
             </div>
-          <span className="mobile-footer-dot" aria-hidden />
           <span
-            className={`pointer-events-none mt-3 font-creato-medium text-[0.72rem] tracking-wide text-black/45 ${
+            className="mobile-footer-dot absolute left-1/2 top-[5.05rem] -translate-x-1/2"
+            aria-hidden
+          />
+          <span
+            className={`pointer-events-none absolute left-1/2 top-[6.05rem] -translate-x-1/2 whitespace-nowrap font-creato-medium text-[0.72rem] tracking-wide text-black/45 ${
               hint ? "opacity-100" : "opacity-0"
             }`}
           >

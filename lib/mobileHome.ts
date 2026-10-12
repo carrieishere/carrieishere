@@ -89,9 +89,14 @@ export const MOBILE_DOME_CLIP = "min(50vw, 20rem)";
 /** 半圆里气泡+圆点的整体位置。数字越大越往下，例如 "2.5rem"。 */
 export const MOBILE_DOME_PIN_TOP = "3rem";
 
+/** @CARRIEYHERE 字间距。负数更紧，例如 "-0.04em"；正数更疏。 */
+export const MOBILE_WORDMARK_TRACKING = "-0.07em";
+
 export const MOBILE_FOOTER_CHAR_MS = 60;
 export const MOBILE_FOOTER_MIN_MS = 2500;
 export const MOBILE_FOOTER_MAX_MS = 5000;
+export const MOBILE_FOOTER_TYPING_MIN_MS = 600;
+export const MOBILE_FOOTER_TYPING_MAX_MS = 1000;
 export const MOBILE_FOOTER_ENTER_S = 0.35;
 export const MOBILE_FOOTER_EXIT_MS = 300;
 export const MOBILE_FOOTER_GAP_MS = 400;
