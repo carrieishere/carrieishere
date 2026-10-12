@@ -9,7 +9,6 @@ export const SHOW_MOBILE_HOTSPOTS = false;
 
 export const MOBILE_TOP_IDLE = "Nice day, huh?";
 export const MOBILE_TOP_NUDGE = "Go on, tap something.";
-export const MOBILE_TOP_TAP = "There's more to find on a computer.";
 /** 进入首页后，从第一句切到第二句的等待时间（毫秒）。 */
 export const MOBILE_TOP_NUDGE_MS = 1600;
 /** 相对主标题右上角。bx 正数往右，by 正数往下；bw 同物品气泡。 */

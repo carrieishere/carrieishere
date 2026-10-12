@@ -33,7 +33,6 @@ import {
   MOBILE_TOP_IDLE,
   MOBILE_TOP_NUDGE,
   MOBILE_TOP_NUDGE_MS,
-  MOBILE_TOP_TAP,
   SHOW_MOBILE_HOTSPOTS,
   mobileFooterDwellMs,
   type MobileBubbleTail,
@@ -239,7 +238,7 @@ export function MobileHome({ active = true }: { active?: boolean }) {
   const onTitleTap = (event: MouseEvent<HTMLHeadingElement>) => {
     event.stopPropagation();
     titleLocked.current = true;
-    setTitleText(MOBILE_TOP_TAP);
+    setTitleText(null);
     window.location.href = MOBILE_MAILTO;
   };
 
@@ -256,16 +255,13 @@ export function MobileHome({ active = true }: { active?: boolean }) {
     ).matches;
 
     const atTop = () => el.scrollTop <= 10;
-    const atBottom = () =>
-      el.scrollHeight - el.scrollTop - el.clientHeight <= 10;
 
     let lastY = 0;
     let overflow = 0;
     let wheelTimer = 0;
 
     const paintShift = () => {
-      if (overflow > 0) shift.set(-rubberPull(overflow));
-      else if (overflow < 0) shift.set(rubberPull(-overflow));
+      if (overflow < 0) shift.set(rubberPull(-overflow));
       else shift.set(0);
     };
 
@@ -278,9 +274,7 @@ export function MobileHome({ active = true }: { active?: boolean }) {
       lastY = event.touches[0]?.clientY ?? 0;
       shift.stop();
       const y = shift.get();
-      if (y > 0.5) overflow = -rubberInverse(y);
-      else if (y < -0.5) overflow = rubberInverse(-y);
-      else overflow = 0;
+      overflow = y > 0.5 ? -rubberInverse(y) : 0;
     };
 
     const onTouchMove = (event: TouchEvent) => {
@@ -288,12 +282,10 @@ export function MobileHome({ active = true }: { active?: boolean }) {
       const y = event.touches[0]?.clientY ?? lastY;
       const delta = lastY - y;
       lastY = y;
-      const pullingBottom = overflow > 0 || (atBottom() && delta > 0);
       const pullingTop = overflow < 0 || (atTop() && delta < 0);
-      if (!pullingBottom && !pullingTop) return;
+      if (!pullingTop) return;
       overflow += delta;
-      if (pullingTop && overflow > 0) overflow = 0;
-      if (pullingBottom && overflow < 0) overflow = 0;
+      if (overflow > 0) overflow = 0;
       if (overflow === 0) {
         shift.set(0);
         return;
@@ -308,12 +300,10 @@ export function MobileHome({ active = true }: { active?: boolean }) {
 
     const onWheel = (event: WheelEvent) => {
       if (reduced) return;
-      const pullingBottom = overflow > 0 || (atBottom() && event.deltaY > 0);
       const pullingTop = overflow < 0 || (atTop() && event.deltaY < 0);
-      if (!pullingBottom && !pullingTop) return;
+      if (!pullingTop) return;
       overflow += event.deltaY;
-      if (pullingTop && overflow > 0) overflow = 0;
-      if (pullingBottom && overflow < 0) overflow = 0;
+      if (overflow > 0) overflow = 0;
       if (overflow === 0) {
         shift.set(0);
         return;
@@ -346,8 +336,8 @@ export function MobileHome({ active = true }: { active?: boolean }) {
 
   return (
     <div
-      className={`relative w-full bg-white ${
-        active ? "h-full overflow-hidden" : "min-h-screen overflow-hidden"
+      className={`relative w-full ${
+        active ? "h-full overflow-hidden bg-black" : "min-h-screen overflow-hidden bg-white"
       }`}
       onClick={onBlank}
     >
@@ -355,17 +345,16 @@ export function MobileHome({ active = true }: { active?: boolean }) {
         ref={scrollerRef}
         className={
           active
-            ? "mobile-home-scroll h-full overflow-y-auto overscroll-y-contain snap-y snap-proximity bg-white"
+            ? "mobile-home-scroll h-full overflow-y-auto overscroll-none snap-y snap-proximity bg-black"
             : "overflow-hidden bg-white"
         }
         style={
-          active
-            ? { paddingBottom: footerPad, scrollPaddingBottom: footerPad }
-            : undefined
+          active ? { scrollPaddingBottom: footerPad } : undefined
         }
       >
       <motion.div style={{ y: shift }}>
-      <header className="relative z-0 snap-start overflow-visible bg-white px-[6%] pb-5 pt-[18%]">
+      <div className="bg-white">
+      <header className="relative z-0 snap-start overflow-visible px-[6%] pb-5 pt-[18%]">
         <div className="flex flex-col items-center text-center">
           <p className="font-creato-black text-[clamp(6px,2vw,9px)] leading-[1] tracking-[0.02em] text-[#4a4a4a]">
             CARRIE YANG
@@ -395,7 +384,7 @@ export function MobileHome({ active = true }: { active?: boolean }) {
         </div>
       </header>
 
-      <div className="relative z-20 w-full snap-end overflow-visible bg-white">
+      <div className="relative z-20 w-full overflow-visible">
         <img
           src="/assets/mobile/mobile.webp"
           alt=""
@@ -450,6 +439,15 @@ export function MobileHome({ active = true }: { active?: boolean }) {
           </div>
         ))}
       </div>
+      </div>
+      <InstagramMarquee />
+      {active ? (
+        <div
+          aria-hidden
+          className="bg-black"
+          style={{ height: footerPad }}
+        />
+      ) : null}
       </motion.div>
       </motion.div>
       <MobileContactFooter
@@ -459,6 +457,36 @@ export function MobileHome({ active = true }: { active?: boolean }) {
         onHeight={setFooterPad}
       />
     </div>
+  );
+}
+
+function InstagramMarquee() {
+  return (
+    <a
+      href={MOBILE_INSTAGRAM}
+      target="_blank"
+      rel="noreferrer"
+      aria-label="Instagram @carrieyhere"
+      className="mobile-footer-marquee -mb-px snap-end block w-full bg-black py-3"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <span className="mobile-footer-marquee-track font-creato-black">
+        <span className="flex shrink-0">
+          {Array.from({ length: 8 }, (_, index) => (
+            <span key={`a-${index}`} className="whitespace-nowrap px-[0.28em]">
+              @CARRIEYHERE
+            </span>
+          ))}
+        </span>
+        <span className="flex shrink-0" aria-hidden>
+          {Array.from({ length: 8 }, (_, index) => (
+            <span key={`b-${index}`} className="whitespace-nowrap px-[0.28em]">
+              @CARRIEYHERE
+            </span>
+          ))}
+        </span>
+      </span>
+    </a>
   );
 }
 
@@ -596,8 +624,8 @@ function MobileContactFooter({
     <footer
       ref={footerRef}
       className={`${
-        pinned ? "absolute inset-x-0 bottom-0 z-30" : "relative z-20"
-      } overflow-visible bg-black px-5 pt-2 pb-[max(2rem,env(safe-area-inset-bottom))] text-white`}
+        pinned ? "absolute inset-x-0 bottom-0 z-30 shadow-[0_-2px_0_0_#000]" : "relative z-20"
+      } overflow-visible bg-black px-5 pt-0 pb-[max(2rem,env(safe-area-inset-bottom))] text-white`}
       onClick={(event) => event.stopPropagation()}
     >
       <button
@@ -673,37 +701,13 @@ function MobileContactFooter({
         </div>
         <span className="mobile-footer-dot" aria-hidden />
         <span
-          className={`mt-3 font-creato-medium text-[0.72rem] tracking-wide text-white/70 ${
+          className={`pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 font-creato-medium text-[0.72rem] tracking-wide text-white/70 ${
             hint ? "opacity-100" : "opacity-0"
           }`}
         >
           Email copied
         </span>
       </button>
-      <a
-        href={MOBILE_INSTAGRAM}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="Instagram @carrieyhere"
-        className="mobile-footer-marquee mt-1 block w-[calc(100%+2.5rem)] -mx-5"
-      >
-        <span className="mobile-footer-marquee-track font-creato-black">
-          <span className="flex shrink-0">
-            {Array.from({ length: 8 }, (_, index) => (
-              <span key={`a-${index}`} className="whitespace-nowrap px-[0.28em]">
-                @CARRIEYHERE
-              </span>
-            ))}
-          </span>
-          <span className="flex shrink-0" aria-hidden>
-            {Array.from({ length: 8 }, (_, index) => (
-              <span key={`b-${index}`} className="whitespace-nowrap px-[0.28em]">
-                @CARRIEYHERE
-              </span>
-            ))}
-          </span>
-        </span>
-      </a>
     </footer>
   );
 }
