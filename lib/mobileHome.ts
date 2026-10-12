@@ -90,7 +90,7 @@ export const MOBILE_DOME_CLIP = "min(50vw, 20rem)";
 export const MOBILE_DOME_PIN_TOP = "3rem";
 
 /** @CARRIEYHERE 字间距。负数更紧，例如 "-0.04em"；正数更疏。 */
-export const MOBILE_WORDMARK_TRACKING = "-0.07em";
+export const MOBILE_WORDMARK_TRACKING = "-0.03em";
 
 export const MOBILE_FOOTER_CHAR_MS = 60;
 export const MOBILE_FOOTER_MIN_MS = 2500;

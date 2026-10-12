@@ -357,6 +357,34 @@ body {
   animation: mobile-footer-dot-signal 3.2s linear infinite;
 }
 
+.mobile-footer-marquee {
+  overflow: hidden;
+}
+
+.mobile-footer-marquee-track {
+  display: flex;
+  width: max-content;
+  color: #9a9a9a;
+  font-size: clamp(2.4rem, 14vw, 4.4rem);
+  line-height: 1;
+  animation: mobile-footer-marquee 48s linear infinite;
+}
+
+@keyframes mobile-footer-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-footer-marquee-track {
+    animation: none;
+  }
+}
+
 .mobile-typing {
   display: flex;
   align-items: center;

@@ -499,55 +499,36 @@ export function MobileHome({ active = true }: { active?: boolean }) {
   );
 }
 
-function InstagramWordmark({
-  scrollerRef,
-  reduceMotion,
-}: {
-  scrollerRef: RefObject<HTMLDivElement | null>;
-  reduceMotion: boolean;
-}) {
-  const boxRef = useRef<HTMLDivElement>(null);
-  const opacity = useMotionValue(1);
-
-  useEffect(() => {
-    const box = boxRef.current;
-    const scroller = scrollerRef.current;
-    if (!box || !scroller || reduceMotion) {
-      opacity.set(1);
-      return;
-    }
-    const update = () => {
-      const rect = box.getBoundingClientRect();
-      const view = scroller.getBoundingClientRect();
-      const span = Math.max(rect.height, 1);
-      const next = (view.bottom - rect.top) / span;
-      opacity.set(Math.max(0, Math.min(1, next)));
-    };
-    scroller.addEventListener("scroll", update, { passive: true });
-    update();
-    return () => scroller.removeEventListener("scroll", update);
-  }, [scrollerRef, reduceMotion, opacity]);
-
+function InstagramMarquee() {
   return (
-    <div
-      ref={boxRef}
-      className="relative z-10 bg-black px-[2.4%] pb-1 pt-5 font-creato-black text-[13vw] leading-[0.82]"
-      style={{ letterSpacing: MOBILE_WORDMARK_TRACKING }}
+    <a
+      href={MOBILE_INSTAGRAM}
+      target="_blank"
+      rel="noreferrer"
+      aria-label="Instagram @carrieyhere"
+      className="mobile-footer-marquee relative z-10 block w-full bg-black py-3"
+      onClick={(event) => event.stopPropagation()}
     >
-      <motion.a
-        href={MOBILE_INSTAGRAM}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="Instagram @carrieyhere"
-        className="block cursor-pointer"
-        onClick={(event) => event.stopPropagation()}
-        style={reduceMotion ? undefined : { opacity }}
+      <span
+        className="mobile-footer-marquee-track font-creato-black"
+        style={{ letterSpacing: MOBILE_WORDMARK_TRACKING }}
       >
-        <span className="block w-full whitespace-nowrap text-[#9a9a9a]">
-          @CARRIEYHERE
+        <span className="flex shrink-0">
+          {Array.from({ length: 8 }, (_, index) => (
+            <span key={`a-${index}`} className="whitespace-nowrap px-[0.28em]">
+              @CARRIEYHERE
+            </span>
+          ))}
         </span>
-      </motion.a>
-    </div>
+        <span className="flex shrink-0" aria-hidden>
+          {Array.from({ length: 8 }, (_, index) => (
+            <span key={`b-${index}`} className="whitespace-nowrap px-[0.28em]">
+              @CARRIEYHERE
+            </span>
+          ))}
+        </span>
+      </span>
+    </a>
   );
 }
 
@@ -694,10 +675,7 @@ function MobileContactFooter({
       className="relative bg-black"
       onClick={(event) => event.stopPropagation()}
     >
-      <InstagramWordmark
-        scrollerRef={scrollerRef}
-        reduceMotion={reduceMotion}
-      />
+      <InstagramMarquee />
       <div
         className="pointer-events-none relative z-20 overflow-hidden"
         style={{
