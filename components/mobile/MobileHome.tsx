@@ -750,7 +750,7 @@ function MobileContactFooter({
           Email copied
         </span>
       </button>
-      <a
+      <motion.a
         href={MOBILE_INSTAGRAM}
         target="_blank"
         rel="noreferrer"
@@ -774,7 +774,7 @@ function MobileContactFooter({
             ))}
           </span>
         </span>
-      </a>
+      </motion.a>
       <motion.div
         aria-hidden
         className="pointer-events-none absolute inset-0 z-30 bg-white"
