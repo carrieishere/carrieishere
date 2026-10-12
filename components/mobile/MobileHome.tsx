@@ -31,7 +31,6 @@ import {
   MOBILE_INSTAGRAM,
   MOBILE_ITEM_HINTS,
   MOBILE_MAILTO,
-  MOBILE_SCENE_PARALLAX,
   MOBILE_TITLE_BUBBLE,
   MOBILE_TOP_IDLE,
   MOBILE_TOP_NUDGE,
@@ -74,6 +73,20 @@ const POP = {
   animate: { opacity: 1, y: 0, scale: 1 },
   exit: { opacity: 0, y: 6, scale: 0.94 },
   transition: { duration: 0.2 },
+};
+
+function rubberPull(distance: number, limit = 56) {
+  if (distance <= 0) return 0;
+  return (distance * limit) / (distance + limit * 1.65);
+}
+
+const FOOTER_SPRING = {
+  type: "spring" as const,
+  stiffness: 280,
+  damping: 36,
+  mass: 0.85,
+  restDelta: 0.15,
+  restSpeed: 0.2,
 };
 
 function sleep(ms: number, timers: Set<number>) {
@@ -227,94 +240,99 @@ export function MobileHome({ active = true }: { active?: boolean }) {
   };
 
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const grow = useMotionValue(0);
-  const sceneY = useMotionValue(0);
+  const pull = useMotionValue(0);
   const scrollMix = useMotionValue(0);
   const pageBg = useTransform(
     scrollMix,
     [0, 1],
     ["rgb(255, 255, 255)", "rgb(0, 0, 0)"],
   );
-  const atBottomRef = useRef(false);
-  const reduceMotion = useRef(false);
-
-  useEffect(() => {
-    reduceMotion.current = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-  }, []);
 
   useEffect(() => {
     if (!active) return;
     const el = scrollerRef.current;
     if (!el) return;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
 
-    const readBottom = () =>
+    const atBottom = () =>
       el.scrollHeight - el.scrollTop - el.clientHeight <= 10;
 
-    const paintScroll = () => {
-      const max = Math.max(1, el.scrollHeight - el.clientHeight);
-      scrollMix.set(el.scrollTop / max);
-      sceneY.set(
-        reduceMotion.current ? 0 : el.scrollTop * MOBILE_SCENE_PARALLAX,
-      );
+    let lastY = 0;
+    let overflow = 0;
+    let wheelTimer = 0;
+
+    const paintPull = () => pull.set(rubberPull(overflow));
+
+    const release = () => {
+      overflow = 0;
+      void animate(pull, 0, FOOTER_SPRING);
     };
 
     const onScroll = () => {
-      paintScroll();
-      const hit = readBottom();
-      if (hit && !atBottomRef.current) {
-        atBottomRef.current = true;
-        void animate(grow, 24, {
-          type: "spring",
-          stiffness: 200,
-          damping: 13,
-          mass: 0.7,
-        }).then(() =>
-          animate(grow, 11, {
-            type: "spring",
-            stiffness: 170,
-            damping: 16,
-          }),
-        );
-      } else if (!hit && atBottomRef.current) {
-        atBottomRef.current = false;
-        void animate(grow, 0, { type: "spring", stiffness: 260, damping: 24 });
-      }
+      const max = Math.max(1, el.scrollHeight - el.clientHeight);
+      scrollMix.set(el.scrollTop / max);
     };
 
-    let startY = 0;
-    let base = 0;
     const onTouchStart = (event: TouchEvent) => {
-      startY = event.touches[0]?.clientY ?? 0;
-      base = grow.get();
+      lastY = event.touches[0]?.clientY ?? 0;
+      overflow = 0;
     };
+
     const onTouchMove = (event: TouchEvent) => {
-      if (!readBottom()) return;
-      const y = event.touches[0]?.clientY ?? startY;
-      const dy = startY - y;
-      if (dy <= 0) return;
+      if (reduced) return;
+      const y = event.touches[0]?.clientY ?? lastY;
+      const delta = lastY - y;
+      lastY = y;
+      const pulling = overflow > 0 || (atBottom() && delta > 0);
+      if (!pulling) return;
+      overflow = Math.max(0, overflow + delta);
+      if (overflow <= 0) {
+        overflow = 0;
+        pull.set(0);
+        return;
+      }
       if (event.cancelable) event.preventDefault();
-      grow.set(base + Math.min(52, dy * 0.34));
+      paintPull();
     };
+
     const onTouchEnd = () => {
-      if (!readBottom()) return;
-      const next = grow.get() > 30 ? 16 : 11;
-      void animate(grow, next, { type: "spring", stiffness: 210, damping: 16 });
+      if (overflow > 0 || pull.get() > 0.2) release();
+    };
+
+    const onWheel = (event: WheelEvent) => {
+      if (reduced) return;
+      const pushing = overflow > 0 || (atBottom() && event.deltaY > 0);
+      if (!pushing) return;
+      overflow = Math.max(0, overflow + event.deltaY);
+      if (overflow > 0) {
+        if (event.cancelable) event.preventDefault();
+        paintPull();
+      } else {
+        pull.set(0);
+      }
+      window.clearTimeout(wheelTimer);
+      wheelTimer = window.setTimeout(release, 80);
     };
 
     el.addEventListener("scroll", onScroll, { passive: true });
     el.addEventListener("touchstart", onTouchStart, { passive: true });
     el.addEventListener("touchmove", onTouchMove, { passive: false });
     el.addEventListener("touchend", onTouchEnd);
+    el.addEventListener("touchcancel", onTouchEnd);
+    el.addEventListener("wheel", onWheel, { passive: false });
     onScroll();
     return () => {
+      window.clearTimeout(wheelTimer);
       el.removeEventListener("scroll", onScroll);
       el.removeEventListener("touchstart", onTouchStart);
       el.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
+      el.removeEventListener("wheel", onWheel);
     };
-  }, [active, grow, sceneY, scrollMix]);
+  }, [active, pull, scrollMix]);
 
   const onBlank = (event: MouseEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest("[data-mobile-hotspot]")) return;
@@ -362,10 +380,7 @@ export function MobileHome({ active = true }: { active?: boolean }) {
         </div>
       </header>
 
-      <motion.div
-        className="relative z-20 w-full overflow-visible"
-        style={{ y: sceneY }}
-      >
+      <div className="relative z-20 w-full overflow-visible bg-white">
         <img
           src="/assets/mobile/mobile.webp"
           alt=""
@@ -419,9 +434,9 @@ export function MobileHome({ active = true }: { active?: boolean }) {
             </AnimatePresence>
           </div>
         ))}
-      </motion.div>
+      </div>
 
-      <MobileContactFooter active={active} grow={grow} />
+      <MobileContactFooter active={active} pull={pull} />
     </motion.div>
   );
 }
@@ -436,10 +451,10 @@ function hapticTap() {
 
 function MobileContactFooter({
   active,
-  grow,
+  pull,
 }: {
   active: boolean;
-  grow: MotionValue<number>;
+  pull: MotionValue<number>;
 }) {
   const footerRef = useRef<HTMLElement>(null);
   const playingRef = useRef(false);
@@ -450,7 +465,7 @@ function MobileContactFooter({
   const [lineIndex, setLineIndex] = useState(0);
   const [hint, setHint] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const padTop = useTransform(grow, (value) => 48 + value);
+  const footerY = useTransform(pull, (value) => -value);
   const text = MOBILE_FOOTER_LINES[lineIndex] ?? MOBILE_FOOTER_LINES[0]!;
 
   useEffect(() => {
@@ -535,8 +550,8 @@ function MobileContactFooter({
   return (
     <motion.footer
       ref={footerRef}
-      className="relative z-20 overflow-visible bg-black px-5 pb-[max(4.5rem,env(safe-area-inset-bottom))] text-white"
-      style={{ paddingTop: padTop }}
+      className="relative z-20 overflow-visible bg-black px-5 pt-12 pb-[max(4.5rem,env(safe-area-inset-bottom))] text-white"
+      style={{ y: footerY }}
       onClick={(event) => event.stopPropagation()}
     >
       <button

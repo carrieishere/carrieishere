@@ -92,7 +92,6 @@ export const MOBILE_FOOTER_TYPING_MAX_MS = 1000;
 export const MOBILE_FOOTER_ENTER_S = 0.35;
 export const MOBILE_FOOTER_EXIT_MS = 300;
 export const MOBILE_FOOTER_GAP_MS = 400;
-export const MOBILE_SCENE_PARALLAX = 0.08;
 
 export function mobileFooterDwellMs(text: string) {
   return Math.min(

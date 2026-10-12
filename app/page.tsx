@@ -32,7 +32,7 @@ export default function HomePage() {
   const framePreview = useMobileFramePreview();
 
   if (mode === null || framePreview === null) {
-    return <main className="h-screen w-full bg-black" aria-hidden />;
+    return <main className="h-screen w-full bg-white" aria-hidden />;
   }
 
   if (framePreview) {
