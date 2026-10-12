@@ -14,7 +14,7 @@ const CAPTION_PHRASES = [
   "I went to the beach this morning.",
   "Beaches, parks, the edge of town... those places always make me feel calm.",
 ] as const;
-const CAPTION_MS = 8000;
+const CAPTION_MS = 4500;
 const CAPTION_GAP_MS = 400;
 const CAPTION_DELAY_MS = 800;
 
