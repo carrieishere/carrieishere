@@ -69,17 +69,10 @@ function DesktopScene() {
       document.head.appendChild(link);
       return link;
     });
-    const idle =
-      "requestIdleCallback" in window
-        ? window.requestIdleCallback(() => preloadCameraAssets(), { timeout: 2200 })
-        : window.setTimeout(() => preloadCameraAssets(), 400);
+    const timeout = window.setTimeout(() => preloadCameraAssets(), 400);
     return () => {
       links.forEach((link) => link.remove());
-      if ("requestIdleCallback" in window) {
-        window.cancelIdleCallback(idle as number);
-      } else {
-        window.clearTimeout(idle as number);
-      }
+      window.clearTimeout(timeout);
     };
   }, []);
 
