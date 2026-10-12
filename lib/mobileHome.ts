@@ -83,11 +83,15 @@ export const MOBILE_FOOTER_BUBBLE = {
   tail: "center" as const,
 };
 
+/** 底部白半圆露出高度。数字越大，白色露出越多。建议用 rem，例如 "12rem"。 */
+export const MOBILE_DOME_CLIP = "min(50vw, 20rem)";
+
+/** 半圆里气泡+圆点的整体位置。数字越大越往下，例如 "2.5rem"。 */
+export const MOBILE_DOME_PIN_TOP = "3rem";
+
 export const MOBILE_FOOTER_CHAR_MS = 60;
 export const MOBILE_FOOTER_MIN_MS = 2500;
 export const MOBILE_FOOTER_MAX_MS = 5000;
-export const MOBILE_FOOTER_TYPING_MIN_MS = 600;
-export const MOBILE_FOOTER_TYPING_MAX_MS = 1000;
 export const MOBILE_FOOTER_ENTER_S = 0.35;
 export const MOBILE_FOOTER_EXIT_MS = 300;
 export const MOBILE_FOOTER_GAP_MS = 400;
