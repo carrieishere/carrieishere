@@ -13,8 +13,6 @@ import {
   AnimatePresence,
   motion,
   useMotionValue,
-  useTransform,
-  type MotionValue,
 } from "framer-motion";
 import {
   MOBILE_ART_HEIGHT,
@@ -94,10 +92,6 @@ const BOUNCE_SPRING = {
   restDelta: 0.15,
   restSpeed: 0.2,
 };
-
-const COLLAPSE_PX = 220;
-const COLLAPSE_SNAP = 0.42;
-const FOOTER_DOT_R = 6;
 
 function sleep(ms: number, timers: Set<number>) {
   return new Promise<void>((resolve) => {
@@ -251,23 +245,15 @@ export function MobileHome({ active = true }: { active?: boolean }) {
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const shift = useMotionValue(0);
-  const collapse = useMotionValue(1);
+  const [footerPad, setFooterPad] = useState(0);
 
   useEffect(() => {
-    if (!active) {
-      collapse.set(1);
-      return;
-    }
+    if (!active) return;
     const el = scrollerRef.current;
     if (!el) return;
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    if (reduced) {
-      collapse.set(0);
-      return;
-    }
-    collapse.set(1);
 
     const atTop = () => el.scrollTop <= 10;
     const atBottom = () =>
@@ -275,8 +261,6 @@ export function MobileHome({ active = true }: { active?: boolean }) {
 
     let lastY = 0;
     let overflow = 0;
-    let collapsePull = COLLAPSE_PX;
-    let collapseMoved = false;
     let wheelTimer = 0;
 
     const paintShift = () => {
@@ -285,62 +269,25 @@ export function MobileHome({ active = true }: { active?: boolean }) {
       else shift.set(0);
     };
 
-    const paintCollapse = () => {
-      collapse.set(Math.max(0, Math.min(1, collapsePull / COLLAPSE_PX)));
-    };
-
-    const releaseShift = () => {
+    const release = () => {
       overflow = 0;
       void animate(shift, 0, BOUNCE_SPRING);
-    };
-
-    const releaseCollapse = () => {
-      const next = collapse.get() >= COLLAPSE_SNAP ? 1 : 0;
-      collapsePull = next * COLLAPSE_PX;
-      collapseMoved = false;
-      void animate(collapse, next, {
-        type: "spring",
-        stiffness: 240,
-        damping: 28,
-        mass: 0.9,
-      });
-    };
-
-    const steerCollapse = (delta: number) => {
-      const amount = collapse.get();
-      if (amount > 0.02 && amount < 0.98) return true;
-      if (atBottom() && delta > 0 && amount > 0.02) return true;
-      if (atBottom() && delta < 0 && amount < 0.98) return true;
-      return false;
-    };
-
-    const applyCollapse = (delta: number) => {
-      collapseMoved = true;
-      collapsePull = Math.max(0, Math.min(COLLAPSE_PX, collapsePull - delta));
-      paintCollapse();
     };
 
     const onTouchStart = (event: TouchEvent) => {
       lastY = event.touches[0]?.clientY ?? 0;
       shift.stop();
-      collapse.stop();
-      collapseMoved = false;
       const y = shift.get();
       if (y > 0.5) overflow = -rubberInverse(y);
       else if (y < -0.5) overflow = rubberInverse(-y);
       else overflow = 0;
-      collapsePull = collapse.get() * COLLAPSE_PX;
     };
 
     const onTouchMove = (event: TouchEvent) => {
+      if (reduced) return;
       const y = event.touches[0]?.clientY ?? lastY;
       const delta = lastY - y;
       lastY = y;
-      if (steerCollapse(delta)) {
-        if (event.cancelable) event.preventDefault();
-        applyCollapse(delta);
-        return;
-      }
       const pullingBottom = overflow > 0 || (atBottom() && delta > 0);
       const pullingTop = overflow < 0 || (atTop() && delta < 0);
       if (!pullingBottom && !pullingTop) return;
@@ -356,21 +303,11 @@ export function MobileHome({ active = true }: { active?: boolean }) {
     };
 
     const onTouchEnd = () => {
-      if (collapseMoved) {
-        releaseCollapse();
-        return;
-      }
-      if (overflow !== 0 || Math.abs(shift.get()) > 0.2) releaseShift();
+      if (overflow !== 0 || Math.abs(shift.get()) > 0.2) release();
     };
 
     const onWheel = (event: WheelEvent) => {
-      if (steerCollapse(event.deltaY)) {
-        if (event.cancelable) event.preventDefault();
-        applyCollapse(event.deltaY);
-        window.clearTimeout(wheelTimer);
-        wheelTimer = window.setTimeout(releaseCollapse, 80);
-        return;
-      }
+      if (reduced) return;
       const pullingBottom = overflow > 0 || (atBottom() && event.deltaY > 0);
       const pullingTop = overflow < 0 || (atTop() && event.deltaY < 0);
       if (!pullingBottom && !pullingTop) return;
@@ -384,7 +321,7 @@ export function MobileHome({ active = true }: { active?: boolean }) {
       if (event.cancelable) event.preventDefault();
       paintShift();
       window.clearTimeout(wheelTimer);
-      wheelTimer = window.setTimeout(releaseShift, 80);
+      wheelTimer = window.setTimeout(release, 80);
     };
 
     el.addEventListener("touchstart", onTouchStart, { passive: true });
@@ -400,7 +337,7 @@ export function MobileHome({ active = true }: { active?: boolean }) {
       el.removeEventListener("touchcancel", onTouchEnd);
       el.removeEventListener("wheel", onWheel);
     };
-  }, [active, collapse, shift]);
+  }, [active, shift]);
 
   const onBlank = (event: MouseEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest("[data-mobile-hotspot]")) return;
@@ -408,17 +345,27 @@ export function MobileHome({ active = true }: { active?: boolean }) {
   };
 
   return (
-    <motion.div
-      ref={scrollerRef}
-      className={`relative w-full ${
-        active
-          ? "mobile-home-scroll h-full overflow-y-auto overscroll-y-contain bg-white"
-          : "min-h-screen overflow-hidden bg-white"
+    <div
+      className={`relative w-full bg-white ${
+        active ? "h-full overflow-hidden" : "min-h-screen overflow-hidden"
       }`}
       onClick={onBlank}
     >
+      <motion.div
+        ref={scrollerRef}
+        className={
+          active
+            ? "mobile-home-scroll h-full overflow-y-auto overscroll-y-contain snap-y snap-proximity bg-white"
+            : "overflow-hidden bg-white"
+        }
+        style={
+          active
+            ? { paddingBottom: footerPad, scrollPaddingBottom: footerPad }
+            : undefined
+        }
+      >
       <motion.div style={{ y: shift }}>
-      <header className="relative z-0 overflow-visible bg-white px-[6%] pb-5 pt-[18%]">
+      <header className="relative z-0 snap-start overflow-visible bg-white px-[6%] pb-5 pt-[18%]">
         <div className="flex flex-col items-center text-center">
           <p className="font-creato-black text-[clamp(6px,2vw,9px)] leading-[1] tracking-[0.02em] text-[#4a4a4a]">
             CARRIE YANG
@@ -448,7 +395,7 @@ export function MobileHome({ active = true }: { active?: boolean }) {
         </div>
       </header>
 
-      <div className="relative z-20 w-full overflow-visible bg-white">
+      <div className="relative z-20 w-full snap-end overflow-visible bg-white">
         <img
           src="/assets/mobile/mobile.webp"
           alt=""
@@ -503,10 +450,15 @@ export function MobileHome({ active = true }: { active?: boolean }) {
           </div>
         ))}
       </div>
-
-      <MobileContactFooter active={active} collapse={collapse} />
       </motion.div>
-    </motion.div>
+      </motion.div>
+      <MobileContactFooter
+        active={active}
+        pinned={active}
+        held={Boolean(activeId || titleText)}
+        onHeight={setFooterPad}
+      />
+    </div>
   );
 }
 
@@ -520,44 +472,28 @@ function hapticTap() {
 
 function MobileContactFooter({
   active,
-  collapse,
+  pinned = false,
+  held = false,
+  onHeight,
 }: {
   active: boolean;
-  collapse: MotionValue<number>;
+  pinned?: boolean;
+  held?: boolean;
+  onHeight?: (height: number) => void;
 }) {
   const footerRef = useRef<HTMLElement>(null);
-  const dotRef = useRef<HTMLSpanElement>(null);
   const playingRef = useRef(false);
+  const visibleRef = useRef(false);
+  const heldRef = useRef(held);
   const indexRef = useRef(0);
   const typedOnceRef = useRef(false);
+  heldRef.current = held;
   const [playing, setPlaying] = useState(false);
   const [phase, setPhase] = useState<"off" | "typing" | "line">("off");
   const [lineIndex, setLineIndex] = useState(0);
   const [hint, setHint] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
   const text = MOBILE_FOOTER_LINES[lineIndex] ?? MOBILE_FOOTER_LINES[0]!;
-  const footerW = useMotionValue(390);
-  const footerH = useMotionValue(420);
-  const originX = useMotionValue(195);
-  const originY = useMotionValue(180);
-  const whiteClip = useTransform(
-    [collapse, footerW, footerH, originX, originY],
-    ([amount, width, height, x, y]) => {
-      const c = Number(amount);
-      const ox = Number(x);
-      const oy = Number(y);
-      const cover =
-        Math.hypot(
-          Math.max(ox, Number(width) - ox),
-          Math.max(oy, Number(height) - oy),
-        ) + 24;
-      const radius =
-        c < 0.012 ? 0 : FOOTER_DOT_R + c * (cover - FOOTER_DOT_R);
-      return `circle(${radius}px at ${ox}px ${oy}px)`;
-    },
-  );
-  const marqueeFade = useTransform(collapse, [0, 0.28], [1, 0]);
-  const bubbleFade = useTransform(collapse, [0, 0.22], [1, 0]);
 
   useEffect(() => {
     setReduceMotion(
@@ -566,51 +502,46 @@ function MobileContactFooter({
   }, []);
 
   useEffect(() => {
-    const footer = footerRef.current;
-    const dot = dotRef.current;
-    if (!footer) return;
-    const measure = () => {
-      footerW.set(footer.offsetWidth || 390);
-      footerH.set(footer.offsetHeight || 420);
-      if (!dot) return;
-      const box = footer.getBoundingClientRect();
-      const point = dot.getBoundingClientRect();
-      originX.set(point.left - box.left + point.width / 2);
-      originY.set(point.top - box.top + point.height / 2);
-    };
+    const node = footerRef.current;
+    if (!node || !onHeight) return;
+    const measure = () => onHeight(node.offsetHeight);
     measure();
     const ro = new ResizeObserver(measure);
-    ro.observe(footer);
-    window.addEventListener("resize", measure);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, [footerH, footerW, originX, originY]);
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, [onHeight, pinned]);
+
+  const talk = useCallback(() => {
+    const on = Boolean(active && visibleRef.current && !heldRef.current);
+    playingRef.current = on;
+    setPlaying(on);
+    if (!on) setPhase("off");
+  }, [active]);
+
+  useEffect(() => {
+    talk();
+  }, [held, talk]);
 
   useEffect(() => {
     if (!active) {
-      playingRef.current = false;
+      visibleRef.current = false;
       typedOnceRef.current = false;
       indexRef.current = 0;
-      setPlaying(false);
-      setPhase("off");
+      talk();
       return;
     }
     const node = footerRef.current;
     if (!node) return;
     const io = new IntersectionObserver(
       ([entry]) => {
-        const on = (entry?.intersectionRatio ?? 0) >= 0.5;
-        playingRef.current = on;
-        setPlaying(on);
-        if (!on) setPhase("off");
+        visibleRef.current = (entry?.intersectionRatio ?? 0) >= 0.5;
+        talk();
       },
       { threshold: [0, 0.25, 0.5, 0.75, 1] },
     );
     io.observe(node);
     return () => io.disconnect();
-  }, [active]);
+  }, [active, talk]);
 
   useEffect(() => {
     if (!playing) return;
@@ -662,9 +593,11 @@ function MobileContactFooter({
   };
 
   return (
-    <motion.footer
+    <footer
       ref={footerRef}
-      className="relative z-20 overflow-hidden bg-black px-5 pt-12 pb-[max(4.5rem,env(safe-area-inset-bottom))] text-white"
+      className={`${
+        pinned ? "absolute inset-x-0 bottom-0 z-30" : "relative z-20"
+      } overflow-visible bg-black px-5 pt-2 pb-[max(2rem,env(safe-area-inset-bottom))] text-white`}
       onClick={(event) => event.stopPropagation()}
     >
       <button
@@ -673,10 +606,7 @@ function MobileContactFooter({
         className="relative mx-auto flex w-full max-w-[22rem] flex-col items-center bg-transparent p-0"
         onClick={() => void onContact()}
       >
-        <motion.div
-          className="flex min-h-[5.4rem] w-full items-end justify-center pb-3"
-          style={{ opacity: bubbleFade }}
-        >
+        <div className="flex min-h-[5.4rem] w-full items-end justify-center pb-3">
           <AnimatePresence mode="wait">
             {phase === "typing" ? (
               <motion.div
@@ -740,8 +670,8 @@ function MobileContactFooter({
               </motion.div>
             ) : null}
           </AnimatePresence>
-        </motion.div>
-        <span ref={dotRef} className="mobile-footer-dot" aria-hidden />
+        </div>
+        <span className="mobile-footer-dot" aria-hidden />
         <span
           className={`mt-3 font-creato-medium text-[0.72rem] tracking-wide text-white/70 ${
             hint ? "opacity-100" : "opacity-0"
@@ -750,13 +680,12 @@ function MobileContactFooter({
           Email copied
         </span>
       </button>
-      <motion.a
+      <a
         href={MOBILE_INSTAGRAM}
         target="_blank"
         rel="noreferrer"
         aria-label="Instagram @carrieyhere"
-        className="mobile-footer-marquee mt-6 block w-[calc(100%+2.5rem)] -mx-5"
-        style={{ opacity: marqueeFade }}
+        className="mobile-footer-marquee mt-1 block w-[calc(100%+2.5rem)] -mx-5"
       >
         <span className="mobile-footer-marquee-track font-creato-black">
           <span className="flex shrink-0">
@@ -774,15 +703,7 @@ function MobileContactFooter({
             ))}
           </span>
         </span>
-      </motion.a>
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-30 bg-white"
-        style={{
-          clipPath: whiteClip,
-          WebkitClipPath: whiteClip,
-        }}
-      />
-    </motion.footer>
+      </a>
+    </footer>
   );
 }
