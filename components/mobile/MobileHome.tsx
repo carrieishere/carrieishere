@@ -85,7 +85,7 @@ function rubberInverse(visual: number, limit = 72) {
   return (x * limit * 1.45) / (limit - x);
 }
 
-const FOOTER_FADE_PX = 96;
+const FOOTER_FADE_PX = 480;
 
 const BOUNCE_SPRING = {
   type: "spring" as const,
