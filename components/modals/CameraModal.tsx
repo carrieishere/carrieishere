@@ -2,17 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import {
+  CAMERA_BODY_SRC,
+  CAMERA_PHOTOS,
+  waitForImage,
+} from "@/lib/cameraAssets";
 import { CAMERA_PHOTO_COUNT } from "@/types";
-
-const CAMERA_PHOTOS = Array.from(
-  { length: CAMERA_PHOTO_COUNT },
-  (_, index) => `/assets/items/camera/ccd/${index}.webp`,
-);
 
 const POV_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 const CAPTION_PHRASES = [
-  "I went to the seaside this morning.",
-  "Beaches, parks, the outskirts... those places can always make me feel calm.",
+  "I went to the beach this morning.",
+  "Beaches, parks, the edge of town... those places always make me feel calm.",
 ] as const;
 const CAPTION_MS = 8000;
 const CAPTION_GAP_MS = 400;
@@ -32,6 +32,9 @@ export function CameraModal({
   const count = CAMERA_PHOTO_COUNT;
   const index = ((photoIndex % count) + count) % count;
   const [caption, setCaption] = useState<string | null>(null);
+  const [bodyReady, setBodyReady] = useState(false);
+  const [photoReady, setPhotoReady] = useState(false);
+  const visible = bodyReady && photoReady;
 
   const step = useCallback(
     (dir: -1 | 1) => {
@@ -45,12 +48,33 @@ export function CameraModal({
   );
 
   useEffect(() => {
+    let alive = true;
+    void waitForImage(CAMERA_BODY_SRC).then(() => {
+      if (alive) setBodyReady(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    setPhotoReady(false);
+    void waitForImage(CAMERA_PHOTOS[index]!).then(() => {
+      if (alive) setPhotoReady(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [index]);
+
+  useEffect(() => {
     const neighbors = [index - 1, index + 1].map(
       (value) => ((value % count) + count) % count,
     );
     const loaders = [...new Set(neighbors)].map((photo) => {
       const img = new window.Image();
-      img.src = CAMERA_PHOTOS[photo];
+      img.src = CAMERA_PHOTOS[photo]!;
       return img;
     });
     return () => {
@@ -82,6 +106,7 @@ export function CameraModal({
   }, [onClose, step]);
 
   useEffect(() => {
+    if (!visible) return;
     let cancelled = false;
     let timer = 0;
     const steps: Array<{ delay: number; caption: string | null }> = [
@@ -90,17 +115,17 @@ export function CameraModal({
       { delay: CAPTION_GAP_MS, caption: CAPTION_PHRASES[1] },
       { delay: CAPTION_MS, caption: null },
     ];
-    let index = 0;
+    let stepIndex = 0;
 
     const run = () => {
-      if (cancelled || index >= steps.length) return;
-      const step = steps[index];
-      index += 1;
+      if (cancelled || stepIndex >= steps.length) return;
+      const next = steps[stepIndex]!;
+      stepIndex += 1;
       timer = window.setTimeout(() => {
         if (cancelled) return;
-        setCaption(step.caption);
+        setCaption(next.caption);
         run();
-      }, step.delay);
+      }, next.delay);
     };
 
     setCaption(null);
@@ -110,7 +135,7 @@ export function CameraModal({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, []);
+  }, [visible]);
 
   return (
     <motion.div
@@ -124,8 +149,12 @@ export function CameraModal({
       <div className="camera-modal-stage">
         <motion.div
           className="camera-pov"
-          initial={{ y: 300, rotateX: 15, scale: 0.8 }}
-          animate={{ y: 0, rotateX: 0, scale: 0.8 }}
+          initial={{ opacity: 0, y: 300, rotateX: 15, scale: 0.8 }}
+          animate={
+            visible
+              ? { opacity: 1, y: 0, rotateX: 0, scale: 0.8 }
+              : { opacity: 0, y: 300, rotateX: 15, scale: 0.8 }
+          }
           exit={{ y: 220, rotateX: 12, scale: 0.86, opacity: 0 }}
           transition={{ duration: 0.8, ease: POV_EASE }}
           onClick={(event) => event.stopPropagation()}
@@ -138,16 +167,25 @@ export function CameraModal({
               draggable={false}
               decoding="async"
               className="camera-screen-photo"
+              style={{
+                opacity: photoReady ? 1 : 0,
+                transition: "opacity 0.28s ease",
+              }}
             />
           </div>
 
           <img
             className="camera-body"
-            src="/assets/items/camera/camera_body.webp"
+            src={CAMERA_BODY_SRC}
             alt="Sony DSC-W830"
             width={1713}
             height={1270}
             draggable={false}
+            decoding="async"
+            style={{
+              opacity: bodyReady ? 1 : 0,
+              transition: "opacity 0.28s ease",
+            }}
           />
 
           <AnimatePresence mode="wait">

@@ -8,6 +8,7 @@ import { CustomCursor } from "@/components/CustomCursor";
 import { CinematicIntro } from "@/components/intro/CinematicIntro";
 import { ChatEasterEggProvider, useChatEasterEgg } from "@/components/chat/ChatEasterEggProvider";
 import { useCinematicIntro } from "@/hooks/useCinematicIntro";
+import { CAMERA_BODY_SRC, CAMERA_PHOTOS, preloadCameraAssets } from "@/lib/cameraAssets";
 import type { ModalOrigin, ModalType } from "@/types";
 
 const ModalChunkFallback = () => (
@@ -58,6 +59,29 @@ function DesktopScene() {
     closeChat?.();
     setActiveModal(type);
   }, [closeChat]);
+
+  useEffect(() => {
+    const links = [CAMERA_BODY_SRC, CAMERA_PHOTOS[0]!].map((href) => {
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "image";
+      link.href = href;
+      document.head.appendChild(link);
+      return link;
+    });
+    const idle =
+      "requestIdleCallback" in window
+        ? window.requestIdleCallback(() => preloadCameraAssets(), { timeout: 2200 })
+        : window.setTimeout(() => preloadCameraAssets(), 400);
+    return () => {
+      links.forEach((link) => link.remove());
+      if ("requestIdleCallback" in window) {
+        window.cancelIdleCallback(idle as number);
+      } else {
+        window.clearTimeout(idle as number);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const html = document.documentElement;
