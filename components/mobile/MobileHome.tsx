@@ -36,7 +36,8 @@ import {
   MOBILE_INSTAGRAM,
   MOBILE_ITEM_HINTS,
   MOBILE_MAILTO,
-  MOBILE_TITLE_BUBBLE,
+  MOBILE_TITLE_IDLE_BUBBLE,
+  MOBILE_TITLE_NUDGE_BUBBLE,
   MOBILE_TOP_IDLE,
   MOBILE_TOP_NUDGE,
   MOBILE_TOP_NUDGE_MS,
@@ -188,7 +189,10 @@ function ItemBubble({
 }
 
 function TitleBubble({ text }: { text: string }) {
-  const { bx, by, bw, tail } = MOBILE_TITLE_BUBBLE;
+  const { bx, by, bw, tail } =
+    text === MOBILE_TOP_NUDGE
+      ? MOBILE_TITLE_NUDGE_BUBBLE
+      : MOBILE_TITLE_IDLE_BUBBLE;
   return (
     <motion.div
       className="pointer-events-none absolute z-30 w-max"

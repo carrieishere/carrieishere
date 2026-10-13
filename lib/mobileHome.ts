@@ -10,9 +10,15 @@ export const SHOW_MOBILE_HOTSPOTS = false;
 export const MOBILE_TOP_IDLE = "Nice day, huh?";
 export const MOBILE_TOP_NUDGE = "Go on, tap something.";
 /** 进入首页后，从第一句切到第二句的等待时间（毫秒）。 */
-export const MOBILE_TOP_NUDGE_MS = 1600;
-/** 相对主标题右上角。bx 正数往右，by 正数往下；bw 同物品气泡。 */
-export const MOBILE_TITLE_BUBBLE = {
+export const MOBILE_TOP_NUDGE_MS = 2600;
+/** 相对主标题右上角。bx 正数往右，by 正数往下；bw 同物品气泡。两句各改各的。 */
+export const MOBILE_TITLE_IDLE_BUBBLE = {
+  bx: 18,
+  by: -60,
+  bw: 180,
+  tail: "left" as const,
+};
+export const MOBILE_TITLE_NUDGE_BUBBLE = {
   bx: 60,
   by: -60,
   bw: 180,

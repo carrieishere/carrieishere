@@ -68,7 +68,6 @@ const PhotoBoothVideo = memo(function PhotoBoothVideo({
     el.setAttribute("webkit-playsinline", "true");
     el.load();
     el.play().catch((err: unknown) => {
-      console.log("Autoplay prevented:", err);
       const name = err instanceof Error ? err.name : "";
       const revealIfStillPaused = () => {
         if (el.paused && !el.ended) setNeedsGesture(true);
@@ -89,7 +88,7 @@ const PhotoBoothVideo = memo(function PhotoBoothVideo({
     if (!el) return;
     el.play()
       .then(() => setNeedsGesture(false))
-      .catch((err) => console.log("Autoplay prevented:", err));
+      .catch(() => {});
   }, []);
 
   return (

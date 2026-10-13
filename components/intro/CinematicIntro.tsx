@@ -20,6 +20,9 @@ const HOLD_MS = 900;
 const EXIT_MS = 620;
 const IDLE_DELAY_MS = 500;
 const SECONDARY_MS = Math.max(KICKER_MS + 200, BLURB_MS + 180);
+/** 相对白点，单位 px。正数往右；越大离点越远。不要用百分比（父级只有圆点那么宽）。 */
+const IDLE_BUBBLE_X = -10;
+const IDLE_BUBBLE_Y = 10;
 
 function scrambleToward(target: string, progress: number, keepIndex = -1) {
   const reveal = Math.floor(Math.max(0, Math.min(1, progress)) * target.length);
@@ -277,7 +280,7 @@ export function CinematicIntro({
       {showType ? (
         <div className="flex max-w-[min(80vw,56rem)] flex-col items-center px-6 text-center">
           <motion.p
-            className="opacity-0 font-creato-black text-[clamp(0.3rem,0.9vw,0.9rem)] leading-[1] tracking-[0.08em] text-[#4a4a4a]"
+            className="opacity-0 font-creato-black text-[0.65rem] leading-[1] tracking-[0.08em] text-[#4a4a4a]"
             initial={{ opacity: 0 }}
             animate={{ opacity: secondaryOpacity }}
             transition={{
@@ -289,7 +292,7 @@ export function CinematicIntro({
             <br />
             <span ref={kickerBRef}>{KICKER_B}</span>
           </motion.p>
-          <h1 className="mt-[clamp(0.4rem,0.4vh,0.4rem)] whitespace-pre font-creato-black text-[clamp(3rem,3vw,3rem)] leading-[0.92] tracking-[-0.032em] text-white">
+          <h1 className="mt-[0.4rem] whitespace-pre font-creato-black text-[2.5rem] leading-[0.92] tracking-[-0.032em] text-white">
             {TITLE.split("").map((ch, index) => {
               const isDot = index === DOT_AT;
               return (
@@ -316,7 +319,7 @@ export function CinematicIntro({
             })}
           </h1>
           <motion.div
-            className="mt-[clamp(0.6rem,0.6vh,0.6rem)] opacity-0 font-creato-black text-[clamp(0.3rem,0.9vw,0.9rem)] leading-[1.0] tracking-[0.em] text-[#4a4a4a]"
+            className="mt-[0.6rem] opacity-0 font-creato-black text-[0.65rem] leading-[1.0] tracking-[0.em] text-[#4a4a4a]"
             initial={{ opacity: 0 }}
             animate={{ opacity: secondaryOpacity }}
             transition={{
@@ -360,7 +363,11 @@ export function CinematicIntro({
               initial={{ opacity: 0, y: 8, scale: 0.94 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
-              className="absolute left-[6px] bottom-[calc(100%+2px)]"
+              className="absolute"
+              style={{
+                left: IDLE_BUBBLE_X,
+                bottom: `calc(100% + ${IDLE_BUBBLE_Y}px)`,
+              }}
             >
               <SpeechCapsule>Hi, I&apos;m right here.</SpeechCapsule>
             </motion.div>
