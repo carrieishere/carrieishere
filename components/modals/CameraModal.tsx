@@ -14,7 +14,7 @@ const CAPTION_PHRASES = [
   "I went to the beach this morning.",
   "Beaches, parks, the edge of town... those places always make me feel calm.",
 ] as const;
-const CAPTION_MS = 4500;
+const CAPTION_MS = 8000;
 const CAPTION_GAP_MS = 400;
 const CAPTION_DELAY_MS = 800;
 
@@ -34,7 +34,6 @@ export function CameraModal({
   const [caption, setCaption] = useState<string | null>(null);
   const [bodyReady, setBodyReady] = useState(false);
   const [photoReady, setPhotoReady] = useState(false);
-  const visible = bodyReady && photoReady;
 
   const step = useCallback(
     (dir: -1 | 1) => {
@@ -108,26 +107,28 @@ export function CameraModal({
   useEffect(() => {
     let cancelled = false;
     let timer = 0;
-    const wait = (ms: number) =>
-      new Promise<void>((resolve) => {
-        timer = window.setTimeout(resolve, ms);
-      });
+    const steps: Array<{ delay: number; caption: string | null }> = [
+      { delay: CAPTION_DELAY_MS, caption: CAPTION_PHRASES[0] },
+      { delay: CAPTION_MS, caption: null },
+      { delay: CAPTION_GAP_MS, caption: CAPTION_PHRASES[1] },
+      { delay: CAPTION_MS, caption: null },
+    ];
+    let stepIndex = 0;
 
-    const run = async () => {
-      await wait(CAPTION_DELAY_MS);
-      while (!cancelled) {
-        for (const line of CAPTION_PHRASES) {
-          if (cancelled) return;
-          setCaption(line);
-          await wait(CAPTION_MS);
-          if (cancelled) return;
-          setCaption(null);
-          await wait(CAPTION_GAP_MS);
-        }
-      }
+    const run = () => {
+      if (cancelled || stepIndex >= steps.length) return;
+      const next = steps[stepIndex]!;
+      stepIndex += 1;
+      timer = window.setTimeout(() => {
+        if (cancelled) return;
+        setCaption(next.caption);
+        run();
+      }, next.delay);
     };
 
-    void run();
+    setCaption(null);
+    run();
+
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
@@ -148,7 +149,7 @@ export function CameraModal({
           className="camera-pov"
           initial={{ opacity: 0, y: 300, rotateX: 15, scale: 0.8 }}
           animate={
-            visible
+            bodyReady
               ? { opacity: 1, y: 0, rotateX: 0, scale: 0.8 }
               : { opacity: 0, y: 300, rotateX: 15, scale: 0.8 }
           }

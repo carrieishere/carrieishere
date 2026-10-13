@@ -672,10 +672,12 @@ function MobileContactFooter({
   return (
     <footer
       ref={footerRef}
-      className="relative bg-black"
+      className="relative overflow-hidden bg-black"
       onClick={(event) => event.stopPropagation()}
     >
-      <InstagramMarquee />
+      <motion.div style={{ y: domeY }}>
+        <InstagramMarquee />
+      </motion.div>
       <div
         className="pointer-events-none relative z-20 overflow-hidden"
         style={{

@@ -20,15 +20,15 @@ export const MOBILE_TITLE_BUBBLE = {
 };
 
 export const MOBILE_ITEM_HINTS = {
-  laptop: "Most of my work lives in here. Best seen on a computer.",
-  notebook: "Kinda personal. You can flip through it on a computer.",
-  camera: "Photos from my wandering. See them on a computer.",
-  perfume: "I've really been liking this perfume lately.",
-  pick: "So that's where it was. I'm always losing these.",
-  lipbalm: "Lip balm. I'm never without it.",
-  earphones: "Usually listening to something.",
+  laptop: "Most of my work is in here. You'll need a bigger screen.",
+  notebook: "Kinda personal. But you can flip through it on a computer.",
+  camera: "Mostly snapshots from wandering around. You can check them out on desktop.",
+  perfume: "Been liking this perfume lately.",
+  pick: "Oh, there it is. I keep losing these.",
+  lipbalm: "Daily essential, honestly.",
+  earphones: "All kinds of music, but rock's still my favorite.",
   flower1: "I like flowers, though.",
-  shoes: "That's me, by the way. Standing right here.",
+  shoes: "Yep, that's me. Hi~",
 } as const;
 
 export type MobileItemId = keyof typeof MOBILE_ITEM_HINTS;
