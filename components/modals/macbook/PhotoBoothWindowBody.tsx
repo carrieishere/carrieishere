@@ -60,6 +60,7 @@ const PhotoBoothVideo = memo(function PhotoBoothVideo({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [needsGesture, setNeedsGesture] = useState(false);
+  const [buffering, setBuffering] = useState(true);
 
   useEffect(() => {
     const el = videoRef.current;
@@ -100,11 +101,27 @@ const PhotoBoothVideo = memo(function PhotoBoothVideo({
         webkit-playsinline="true"
         crossOrigin="anonymous"
         controls={false}
-        preload="metadata"
+        preload="auto"
+        onLoadedData={() => setBuffering(false)}
+        onPlaying={() => setBuffering(false)}
+        onWaiting={() => setBuffering(true)}
+        onError={() => setBuffering(false)}
         onEnded={onEnded}
       >
         <source src={PHOTOBOOTH_VIDEO} type="video/mp4" />
       </video>
+      {buffering && !needsGesture ? (
+        <div
+          className="absolute inset-0 z-[1] flex items-center justify-center bg-white"
+          role="status"
+          aria-label="Loading video"
+        >
+          <span
+            aria-hidden
+            className="h-7 w-7 animate-spin rounded-full border-2 border-black/10 border-t-black/70"
+          />
+        </div>
+      ) : null}
       {needsGesture ? (
         <button
           type="button"
@@ -197,7 +214,7 @@ const PhotoBoothStage = memo(function PhotoBoothStage({
             <Camera size={14} strokeWidth={2} />
           </div>
           <span className="ml-auto rounded-md bg-[#d8d8d8] px-3 py-1 text-[11px] leading-none text-[#3a3a3a]">
-            效果
+            Effect
           </span>
         </div>
       </div>

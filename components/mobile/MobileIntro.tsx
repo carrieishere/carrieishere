@@ -282,7 +282,7 @@ export function MobileIntro({
           style={{ fontSize: "clamp(10px, 2.85vw, 16px)" }}
         >
           <motion.p
-            className="opacity-0 font-creato-black text-[9px] leading-[1] tracking-[0.02em] text-[#4a4a4a]"
+            className="opacity-0 font-creato-black text-[8.3px] leading-[1] tracking-[0.02em] text-[#4a4a4a]"
             initial={{ opacity: 0 }}
             animate={{ opacity: secondaryOpacity }}
             transition={{
@@ -294,7 +294,7 @@ export function MobileIntro({
             <br />
             <span ref={kickerBRef}>{KICKER_B}</span>
           </motion.p>
-          <h1 className="mt-[0.1em] whitespace-pre font-creato-black text-[2.5em] leading-[0.92] tracking-[-0.032em] text-white">
+          <h1 className="mt-[0.1em] whitespace-pre font-creato-black text-[3em] leading-[0.92] tracking-[-0.032em] text-white">
             {TITLE.split("").map((ch, index) => {
               const isDot = index === DOT_AT;
               return (
@@ -321,7 +321,7 @@ export function MobileIntro({
             })}
           </h1>
           <motion.div
-            className="mt-[0.85em] w-full opacity-0 font-creato-black text-[9px] leading-[1] tracking-[0.04em] text-[#4a4a4a]"
+            className="mt-[0.85em] w-full opacity-0 font-creato-black text-[8.3px] leading-[1] tracking-[0.04em] text-[#4a4a4a]"
             initial={{ opacity: 0 }}
             animate={{ opacity: secondaryOpacity }}
             transition={{
@@ -362,7 +362,7 @@ export function MobileIntro({
               initial={{ opacity: 0, y: 8, scale: 0.94 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
-              className="pointer-events-none absolute left-[calc(50%+6px)] bottom-[calc(100%+2px)] -translate-x-0"
+              className="pointer-events-none absolute left-[calc(20%+1px)] bottom-[calc(80%+1px)] -translate-x-0"
             >
               <SpeechCapsule>Hi, I&apos;m right here.</SpeechCapsule>
             </motion.div>
