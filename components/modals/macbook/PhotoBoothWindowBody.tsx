@@ -34,7 +34,7 @@ const THUMBNAIL_ALERT_MESSAGES = [
   "Why do you keep clicking this?",
   "You weren’t supposed to see that.",
   "Stop. Please. Just stop.",
-  "NO. I AM WHO I AM!  I'M CARRIE!! ",
+  "NO. I’m fine. I’M CARRIE! I DON’T NEED HER!!",
 ] as const;
 
 const THUMBNAIL_ALERT_BUTTONS = [

@@ -256,9 +256,13 @@ export function InteractiveChatModal({
         </p>
         <div className="relative z-10 ml-auto flex items-center gap-24">
           <ThemeToggle />
-          <span className="font-creato-black text-[11px] tracking-[0.03em] text-white">
-            QUESTION?
-          </span>
+          <a
+            href="mailto:woshiyangjiali@gmail.com"
+            className="font-creato-black text-[11px] tracking-[0.03em] text-white"
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            EMAIL ME
+          </a>
         </div>
       </div>
 
