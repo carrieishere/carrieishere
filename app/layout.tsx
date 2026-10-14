@@ -26,7 +26,7 @@ const creatoMedium = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "CARRIE .IS .HERE",
+  title: "carriey",
   description: "CARRIE YANG — Designer/Art Director",
 };
 
