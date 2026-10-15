@@ -137,12 +137,12 @@ function StickyNoteCard({
   onFront: () => void;
 }) {
   const nodeRef = useRef<HTMLDivElement>(null);
-  const [constraints, setConstraints] = useState({
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  });
+  const [constraints, setConstraints] = useState<{
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+  } | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const updateConstraints = useCallback(() => {
@@ -182,12 +182,15 @@ function StickyNoteCard({
   return (
     <motion.div
       ref={nodeRef}
-      drag={canDrag}
+      drag={canDrag && constraints !== null}
       dragMomentum={false}
       dragElastic={0}
-      dragConstraints={constraints}
+      dragConstraints={constraints ?? undefined}
       whileDrag={canDrag ? { scale: 1.02 } : undefined}
-      onPointerDown={onFront}
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        onFront();
+      }}
       onDragStart={() => {
         if (canDrag) setDragging(true);
       }}

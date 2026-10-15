@@ -36,7 +36,7 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${creatoBlack.variable} ${creatoBold.variable} ${creatoMedium.variable} antialiased bg-white text-black`}
       >

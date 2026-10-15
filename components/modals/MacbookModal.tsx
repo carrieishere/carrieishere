@@ -249,12 +249,12 @@ function DesktopIcon({
   onOpen: () => void;
 }) {
   const iconRef = useRef<HTMLDivElement>(null);
-  const [constraints, setConstraints] = useState({
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  });
+  const [constraints, setConstraints] = useState<{
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+  } | null>(null);
 
   const updateConstraints = useCallback(() => {
     const parent = desktopRef.current;
@@ -282,11 +282,12 @@ function DesktopIcon({
   return (
     <motion.div
       ref={iconRef}
-      drag
+      drag={constraints !== null}
       dragMomentum={false}
       dragElastic={0}
-      dragConstraints={constraints}
+      dragConstraints={constraints ?? undefined}
       whileDrag={{ zIndex: 50 }}
+      onPointerDown={(event) => event.stopPropagation()}
       onTap={onOpen}
       className="group absolute z-10 w-24 max-w-[100px] cursor-grab active:cursor-grabbing"
       style={{ left: icon.left, top: icon.top }}
@@ -520,7 +521,7 @@ export function MacbookModal({ origin, onClose }: MacbookModalProps) {
           src={wallpaperRevealed ? WALLPAPER_REVEALED : WALLPAPER_DEFAULT}
           alt=""
           draggable={false}
-          className="pointer-events-none absolute inset-0 z-0 h-full min-h-screen w-full object-cover object-center"
+          className="pointer-events-none absolute inset-0 -z-10 h-full min-h-screen w-full object-cover object-center"
         />
 
         <div className="absolute inset-x-0 top-0 z-[90] flex h-8 items-center gap-3 bg-black/25 px-3 text-xs text-white/90 backdrop-blur-md">
