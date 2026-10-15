@@ -516,10 +516,11 @@ export function MacbookModal({ origin, onClose }: MacbookModalProps) {
         onClick={(event) => event.stopPropagation()}
       >
         <img
+          key={wallpaperRevealed ? "revealed" : "default"}
           src={wallpaperRevealed ? WALLPAPER_REVEALED : WALLPAPER_DEFAULT}
           alt=""
           draggable={false}
-          className="pointer-events-none absolute inset-0 -z-10 h-full min-h-screen w-full object-cover object-center"
+          className="pointer-events-none absolute inset-0 z-0 h-full min-h-screen w-full object-cover object-center"
         />
 
         <div className="absolute inset-x-0 top-0 z-[90] flex h-8 items-center gap-3 bg-black/25 px-3 text-xs text-white/90 backdrop-blur-md">
