@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import type { ModalOrigin } from "@/types";
 import "@/lib/photoboothSession";
+import { DesktopStickyNotes } from "@/components/modals/macbook/DesktopStickyNotes";
 import { DraggableWindow } from "@/components/modals/macbook/DraggableWindow";
 import {
   ProjectWindowBody,
@@ -105,35 +106,37 @@ const TataCny = dynamic(
 
 const ICON_DIR = "/assets/items/laptop/desktopIcons";
 const DOCK_DIR = "/assets/items/laptop/mac-icons";
+const WALLPAPER_DEFAULT = "/assets/items/laptop/new_wallpaper.webp";
+const WALLPAPER_REVEALED = "/assets/items/laptop/wallpaper-revealed.webp";
 
 const DESKTOP_ICONS = [
-  { file: "Chxxxl.webp", label: "Chxxxl", left: "20%", top: "21%" },
-  { file: "MadeByMe.webp", label: "MadeByMe", left: "32%", top: "18%" },
-  { file: "tata-seasonal-campaigns.webp", label: "SeasonalCampaigns", left: "42%", top: "16%" },
-  { file: "Loho.webp", label: "Loho", left: "58%", top: "24%" },
-  { file: "LilyMlle-brand-image.webp", label: "LilyMlle-BrandImage", left: "80%", top: "48%" },
-  { file: "Lily-Mlle.webp", label: "LilyMlle", left: "56%", top: "65%" },
-  { file: "tata-tomandjerry.webp", label: "tata-tomandjerry", left: "46%", top: "62%" },
+  { file: "Chxxxl.webp", label: "Chxxxl", left: "80%", top: "10%" },
+  { file: "MadeByMe.webp", label: "MadeByMe", left: "87%", top: "60%" },
+  { file: "tata-seasonal-campaigns.webp", label: "SeasonalCampaigns", left: "87%", top: "48%" },
+  { file: "Loho.webp", label: "Loho", left: "87%", top: "23%" },
+  { file: "LilyMlle-brand-image.webp", label: "LilyMlle-BrandImage", left: "87%", top: "73%" },
+  { file: "Lily-Mlle.webp", label: "LilyMlle", left: "80%", top: "48%" },
+  { file: "tata-tomandjerry.webp", label: "tata-tomandjerry", left: "80%", top: "75%" },
   {
     file: "tata-butterbear-collaction-1.webp",
     label: "tata-butterbear-collaction-1",
-    left: "36%",
-    top: "65%",
+    left: "80%",
+    top: "23%",
   },
   {
     file: "tata-butterbear-collaction-2.webp",
     label: "tata-butterbear-collaction-2",
-    left: "13%",
-    top: "43%",
+    left: "80%",
+    top: "60%",
   },
-  { file: "Kilala.webp", label: "Kilala", left: "50%", top: "19%" },
-  { file: "tata-cny.webp", label: "tata-cny", left: "66%", top: "58%" },
-  { file: "tata-celebrity-collab.webp", label: "CelebrityCollab", left: "68%", top: "20%" },
+  { file: "Kilala.webp", label: "Kilala", left: "80%", top: "36%" },
+  { file: "tata-cny.webp", label: "tata-cny", left: "87%", top: "10%" },
+  { file: "tata-celebrity-collab.webp", label: "CelebrityCollab", left: "87%", top: "36%" },
   {
     file: "poster.webp",
     label: "Poster",
-    left: "26%",
-    top: "57%",
+    left: "72%",
+    top: "12%",
     iconSrc: "/assets/items/laptop/mac-icons/poster.webp",
   },
 ] as const;
@@ -319,9 +322,12 @@ export function MacbookModal({ origin, onClose }: MacbookModalProps) {
   const zCounter = useRef(40);
   const [openWindows, setOpenWindows] = useState<DesktopWindow[]>([]);
   const [activeWindowId, setActiveWindowId] = useState<string | null>(null);
+  const [wallpaperRevealed, setWallpaperRevealed] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.add("native-cursor");
+    const preload = new Image();
+    preload.src = WALLPAPER_REVEALED;
     return () => document.documentElement.classList.remove("native-cursor");
   }, []);
 
@@ -360,6 +366,7 @@ export function MacbookModal({ origin, onClose }: MacbookModalProps) {
   }, []);
 
   const closeWindow = useCallback((id: string) => {
+    if (id === "dock-photobooth") setWallpaperRevealed(true);
     setOpenWindows((prev) => prev.filter((window) => window.id !== id));
     setActiveWindowId((current) => (current === id ? null : current));
   }, []);
@@ -509,7 +516,7 @@ export function MacbookModal({ origin, onClose }: MacbookModalProps) {
         onClick={(event) => event.stopPropagation()}
       >
         <img
-          src="/assets/items/laptop/new_wallpaper.webp"
+          src={wallpaperRevealed ? WALLPAPER_REVEALED : WALLPAPER_DEFAULT}
           alt=""
           draggable={false}
           className="pointer-events-none absolute inset-0 -z-10 h-full min-h-screen w-full object-cover object-center"
@@ -546,6 +553,7 @@ export function MacbookModal({ origin, onClose }: MacbookModalProps) {
                 onOpen={() => openProject(icon)}
               />
             ))}
+            <DesktopStickyNotes desktopRef={desktopRef} />
           </div>
 
           {openWindows.map((pane) => (
@@ -560,7 +568,10 @@ export function MacbookModal({ origin, onClose }: MacbookModalProps) {
           ))}
         </div>
 
-        <div className="absolute bottom-16 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-white/30 bg-white/20 p-2 shadow-2xl backdrop-blur-xl">
+        <div
+          data-mac-dock
+          className="absolute bottom-16 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-white/30 bg-white/20 p-2 shadow-2xl backdrop-blur-xl"
+        >
           {DOCK_ICONS.map((icon) => {
             const isMail = icon.kind === "email";
             const isInstagram = icon.kind === "instagram";
