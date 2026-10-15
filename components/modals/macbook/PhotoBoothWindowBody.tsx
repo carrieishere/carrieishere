@@ -17,7 +17,7 @@ import {
 
 const PHOTOBOOTH_DIR = "/assets/items/laptop/photobooth";
 const PHOTOBOOTH_ICON = "/assets/items/laptop/mac-icons/photobooth.webp";
-const PHOTOBOOTH_VIDEO = `${PHOTOBOOTH_DIR}/original1.mp4?v=2`;
+const PHOTOBOOTH_VIDEO = `${PHOTOBOOTH_DIR}/original1.mp4?v=3`;
 
 const THUMB_IDS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
 
