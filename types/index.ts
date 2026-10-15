@@ -8,4 +8,4 @@ export interface ModalOrigin {
 }
 
 export const NOTEBOOK_PAGE_COUNT = 6;
-export const CAMERA_PHOTO_COUNT = 26;
+export const CAMERA_PHOTO_COUNT = 25;
