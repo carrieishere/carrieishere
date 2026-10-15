@@ -239,13 +239,28 @@ function windowBody(kind: WindowKind, heading: string) {
   return <SimpleWindowBody label={heading} />;
 }
 
+function dragLimits(parent: HTMLElement, node: HTMLElement) {
+  const parentRect = parent.getBoundingClientRect();
+  const nodeRect = node.getBoundingClientRect();
+  const scaleX = parent.offsetWidth ? parentRect.width / parent.offsetWidth : 1;
+  const scaleY = parent.offsetHeight ? parentRect.height / parent.offsetHeight : 1;
+  return {
+    left: (parentRect.left - nodeRect.left) / scaleX,
+    right: (parentRect.right - nodeRect.right) / scaleX,
+    top: (parentRect.top - nodeRect.top) / scaleY,
+    bottom: (parentRect.bottom - nodeRect.bottom) / scaleY,
+  };
+}
+
 function DesktopIcon({
   icon,
   desktopRef,
+  settled,
   onOpen,
 }: {
   icon: (typeof DESKTOP_ICONS)[number];
   desktopRef: RefObject<HTMLDivElement | null>;
+  settled: boolean;
   onOpen: () => void;
 }) {
   const iconRef = useRef<HTMLDivElement>(null);
@@ -259,14 +274,8 @@ function DesktopIcon({
   const updateConstraints = useCallback(() => {
     const parent = desktopRef.current;
     const node = iconRef.current;
-    if (!parent || !node) return;
-
-    setConstraints({
-      left: -node.offsetLeft,
-      right: parent.clientWidth - node.offsetLeft - node.offsetWidth,
-      top: -node.offsetTop,
-      bottom: parent.clientHeight - node.offsetTop - node.offsetHeight,
-    });
+    if (!parent || !node || parent.offsetWidth === 0) return;
+    setConstraints(dragLimits(parent, node));
   }, [desktopRef]);
 
   useLayoutEffect(() => {
@@ -277,7 +286,7 @@ function DesktopIcon({
     const observer = new ResizeObserver(updateConstraints);
     observer.observe(parent);
     return () => observer.disconnect();
-  }, [updateConstraints]);
+  }, [updateConstraints, settled]);
 
   return (
     <motion.div
@@ -287,9 +296,8 @@ function DesktopIcon({
       dragElastic={0}
       dragConstraints={constraints ?? undefined}
       whileDrag={{ zIndex: 50 }}
-      onPointerDown={(event) => event.stopPropagation()}
       onTap={onOpen}
-      className="group absolute z-10 w-24 max-w-[100px] cursor-grab active:cursor-grabbing"
+      className="group absolute z-10 w-24 max-w-[100px] cursor-grab touch-none active:cursor-grabbing"
       style={{ left: icon.left, top: icon.top }}
     >
       <div className="flex w-full origin-top flex-col items-center gap-1 transition-transform duration-200 group-hover:scale-125">
@@ -324,6 +332,7 @@ export function MacbookModal({ origin, onClose }: MacbookModalProps) {
   const [openWindows, setOpenWindows] = useState<DesktopWindow[]>([]);
   const [activeWindowId, setActiveWindowId] = useState<string | null>(null);
   const [wallpaperRevealed, setWallpaperRevealed] = useState(false);
+  const [desktopSettled, setDesktopSettled] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.add("native-cursor");
@@ -514,6 +523,7 @@ export function MacbookModal({ origin, onClose }: MacbookModalProps) {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.4 }}
         transition={{ type: "spring", stiffness: 140, damping: 22 }}
+        onAnimationComplete={() => setDesktopSettled(true)}
         onClick={(event) => event.stopPropagation()}
       >
         <img
@@ -540,10 +550,12 @@ export function MacbookModal({ origin, onClose }: MacbookModalProps) {
 
         <div
           ref={desktopRef}
-          className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
+          className="absolute z-10"
           style={{
             width: "min(1920px, 100vw, calc(100vh * 16 / 10))",
             height: "min(1200px, 100vh, calc(100vw * 10 / 16))",
+            left: "calc((100% - min(1920px, 100vw, calc(100vh * 16 / 10))) / 2)",
+            top: "calc((100% - min(1200px, 100vh, calc(100vw * 10 / 16))) / 2)",
           }}
         >
           <div className="relative h-full w-full">
@@ -552,10 +564,11 @@ export function MacbookModal({ origin, onClose }: MacbookModalProps) {
                 key={icon.file}
                 icon={icon}
                 desktopRef={desktopRef}
+                settled={desktopSettled}
                 onOpen={() => openProject(icon)}
               />
             ))}
-            <DesktopStickyNotes desktopRef={desktopRef} />
+            <DesktopStickyNotes desktopRef={desktopRef} settled={desktopSettled} />
           </div>
 
           {openWindows.map((pane) => (

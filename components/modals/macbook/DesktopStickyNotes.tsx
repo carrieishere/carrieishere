@@ -123,16 +123,31 @@ function canDragOnThisDevice() {
   return !window.matchMedia("(pointer: coarse)").matches;
 }
 
+function dragLimits(parent: HTMLElement, node: HTMLElement) {
+  const parentRect = parent.getBoundingClientRect();
+  const nodeRect = node.getBoundingClientRect();
+  const scaleX = parent.offsetWidth ? parentRect.width / parent.offsetWidth : 1;
+  const scaleY = parent.offsetHeight ? parentRect.height / parent.offsetHeight : 1;
+  return {
+    left: (parentRect.left - nodeRect.left) / scaleX,
+    right: (parentRect.right - nodeRect.right) / scaleX,
+    top: (parentRect.top - nodeRect.top) / scaleY,
+    bottom: (parentRect.bottom - nodeRect.bottom) / scaleY,
+  };
+}
+
 function StickyNoteCard({
   note,
   zIndex,
   desktopRef,
+  settled,
   canDrag,
   onFront,
 }: {
   note: StickyNote;
   zIndex: number;
   desktopRef: RefObject<HTMLDivElement | null>;
+  settled: boolean;
   canDrag: boolean;
   onFront: () => void;
 }) {
@@ -148,14 +163,8 @@ function StickyNoteCard({
   const updateConstraints = useCallback(() => {
     const parent = desktopRef.current;
     const node = nodeRef.current;
-    if (!parent || !node) return;
-
-    setConstraints({
-      left: -node.offsetLeft,
-      right: parent.clientWidth - node.offsetLeft - node.offsetWidth,
-      top: -node.offsetTop,
-      bottom: parent.clientHeight - node.offsetTop - node.offsetHeight,
-    });
+    if (!parent || !node || parent.offsetWidth === 0) return;
+    setConstraints(dragLimits(parent, node));
   }, [desktopRef]);
 
   useLayoutEffect(() => {
@@ -165,7 +174,7 @@ function StickyNoteCard({
     const observer = new ResizeObserver(updateConstraints);
     observer.observe(parent);
     return () => observer.disconnect();
-  }, [updateConstraints]);
+  }, [updateConstraints, settled]);
 
   const cardStyle: CSSProperties = {
     left: STICKY_LEFT,
@@ -187,15 +196,12 @@ function StickyNoteCard({
       dragElastic={0}
       dragConstraints={constraints ?? undefined}
       whileDrag={canDrag ? { scale: 1.02 } : undefined}
-      onPointerDown={(event) => {
-        event.stopPropagation();
-        onFront();
-      }}
       onDragStart={() => {
+        onFront();
         if (canDrag) setDragging(true);
       }}
       onDragEnd={() => setDragging(false)}
-      className={`absolute overflow-hidden px-[3%] py-[3%] leading-[1.32] ${
+      className={`absolute overflow-hidden px-[3%] py-[3%] leading-[1.32] touch-none ${
         canDrag
           ? "cursor-grab active:cursor-grabbing"
           : "cursor-default"
@@ -239,8 +245,10 @@ function StickyNoteCard({
 
 export function DesktopStickyNotes({
   desktopRef,
+  settled,
 }: {
   desktopRef: RefObject<HTMLDivElement | null>;
+  settled: boolean;
 }) {
   const [order, setOrder] = useState<StickyNoteId[]>(INITIAL_ORDER);
   const [canDrag] = useState(canDragOnThisDevice);
@@ -260,6 +268,7 @@ export function DesktopStickyNotes({
           note={note}
           zIndex={1 + order.indexOf(note.id)}
           desktopRef={desktopRef}
+          settled={settled}
           canDrag={canDrag}
           onFront={() => bringToFront(note.id)}
         />
