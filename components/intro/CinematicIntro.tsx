@@ -280,7 +280,7 @@ export function CinematicIntro({
       {showType ? (
         <div className="flex max-w-[min(80vw,56rem)] flex-col items-center px-6 text-center">
           <motion.p
-            className="opacity-0 font-creato-black text-[0.65rem] leading-[1] tracking-[0.08em] text-[#4a4a4a]"
+            className="opacity-0 font-creato-black text-[0.75rem] leading-[1.1] tracking-[0.08em] text-[#4a4a4a]"
             initial={{ opacity: 0 }}
             animate={{ opacity: secondaryOpacity }}
             transition={{
@@ -292,7 +292,7 @@ export function CinematicIntro({
             <br />
             <span ref={kickerBRef}>{KICKER_B}</span>
           </motion.p>
-          <h1 className="mt-[0.4rem] whitespace-pre font-creato-black text-[2.5rem] leading-[0.92] tracking-[-0.032em] text-white">
+          <h1 className="mt-[0.4rem] whitespace-pre font-creato-black text-[3rem] leading-[0.92] tracking-[-0.032em] text-white">
             {TITLE.split("").map((ch, index) => {
               const isDot = index === DOT_AT;
               return (
@@ -319,7 +319,7 @@ export function CinematicIntro({
             })}
           </h1>
           <motion.div
-            className="mt-[0.6rem] opacity-0 font-creato-black text-[0.65rem] leading-[1.0] tracking-[0.em] text-[#4a4a4a]"
+            className="mt-[0.7rem] opacity-0 font-creato-black text-[0.75rem] leading-[1.1] tracking-[0.em] text-[#4a4a4a]"
             initial={{ opacity: 0 }}
             animate={{ opacity: secondaryOpacity }}
             transition={{
