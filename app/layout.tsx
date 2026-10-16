@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import localFont from "next/font/local";
 import { ThemeRoot } from "@/components/ThemeRoot";
 import "./globals.css";
@@ -41,6 +42,7 @@ export default function RootLayout({
         className={`${creatoBlack.variable} ${creatoBold.variable} ${creatoMedium.variable} antialiased bg-white text-black`}
       >
         <ThemeRoot>{children}</ThemeRoot>
+        <Analytics />
       </body>
     </html>
   );
