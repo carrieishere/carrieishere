@@ -55,6 +55,7 @@ interface CinematicIntroProps {
   hasOrigin: boolean;
   onTypingComplete: () => void;
   onOrigin: (x: number, y: number, size: number) => void;
+  onReveal: () => void;
 }
 
 export function CinematicIntro({
@@ -63,6 +64,7 @@ export function CinematicIntro({
   hasOrigin,
   onTypingComplete,
   onOrigin,
+  onReveal,
 }: CinematicIntroProps) {
   const [exiting, setExiting] = useState(false);
   const [showSecondary, setShowSecondary] = useState(false);
@@ -348,6 +350,7 @@ export function CinematicIntro({
             top: 415,
             transform: "translate(-50%, -50%)",
           }}
+          onClick={phase === "idle" ? onReveal : undefined}
         >
           <span
             aria-hidden

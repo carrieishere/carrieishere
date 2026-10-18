@@ -260,5 +260,6 @@ export function useCinematicIntro(locked: boolean) {
     hasOrigin,
     setOrigin,
     markIdle,
+    reveal,
   };
 }

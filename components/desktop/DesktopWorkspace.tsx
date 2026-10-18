@@ -140,6 +140,7 @@ function DesktopScene() {
         hasOrigin={intro.hasOrigin}
         onTypingComplete={intro.markIdle}
         onOrigin={intro.setOrigin}
+        onReveal={() => void intro.reveal()}
       />
 
       {activeModal === "MACBOOK" ? (
