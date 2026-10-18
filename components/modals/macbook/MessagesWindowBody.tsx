@@ -3,17 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import { IMESSAGE_THREADS, type ChatThread } from "@/lib/imessageThreads";
 
-function PersonAvatar({ selected }: { selected: boolean }) {
+function PersonAvatar({ emoji }: { emoji?: string }) {
   return (
     <div
-      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
-        selected ? "bg-white/25" : "bg-[#c7c7cc]"
-      }`}
+      className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#969ba5]"
     >
+      {emoji ? (
+        <span className="text-[22px] leading-none" aria-hidden>
+          {emoji}
+        </span>
+      ) : (
       <svg viewBox="0 0 24 24" className="h-6 w-6 fill-white" aria-hidden>
         <circle cx="12" cy="8.2" r="3.4" />
         <path d="M5.2 19.2c.6-3.6 3.4-5.4 6.8-5.4s6.2 1.8 6.8 5.4c.1.5-.3 1-1 1H6.2c-.7 0-1.1-.5-1-1z" />
       </svg>
+      )}
     </div>
   );
 }
@@ -193,7 +197,7 @@ export function MessagesWindowBody() {
                   selected ? "bg-[#0a84ff]" : "hover:bg-black/[0.04]"
                 }`}
               >
-                <PersonAvatar selected={selected} />
+                <PersonAvatar emoji={thread.avatar} />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline justify-between gap-2">
                     <span

@@ -10,6 +10,7 @@ export interface ChatThread {
   name: string;
   time: string;
   preview: string;
+  avatar?: string;
   messages: ChatItem[];
 }
 
@@ -17,6 +18,7 @@ export const IMESSAGE_THREADS: ChatThread[] = [
   {
     id: "wen",
     name: "Wen",
+    avatar: "🦟",
     time: "01:48 PM",
     preview: "👌",
     messages: [
@@ -253,6 +255,7 @@ export const IMESSAGE_THREADS: ChatThread[] = [
   {
     id: "penny",
     name: "Penny Sis~",
+    avatar: "🌻",
     time: "08:48 AM",
     preview: "❤️❤️",
     messages: [
@@ -283,6 +286,7 @@ export const IMESSAGE_THREADS: ChatThread[] = [
   {
     id: "xsis",
     name: "X Sis~",
+    avatar: "🧐",
     time: "08:36 AM",
     preview: "[heart]",
     messages: [
@@ -309,6 +313,7 @@ export const IMESSAGE_THREADS: ChatThread[] = [
   {
     id: "mom",
     name: "Best Mom",
+    avatar: "❤️",
     time: "08:12 AM",
     preview: "☀️☀️☀️ ",
     messages: [
@@ -334,6 +339,7 @@ export const IMESSAGE_THREADS: ChatThread[] = [
   {
     id: "cai",
     name: "Cai",
+    avatar: "⛰️",
     time: "02:28 AM",
     preview: "🌙",
     messages: [
@@ -369,6 +375,7 @@ export const IMESSAGE_THREADS: ChatThread[] = [
   {
     id: "bear",
     name: "Bear",
+    avatar: "🐻",
     time: "12:06 AM",
     preview: "[heart]",
     messages: [
