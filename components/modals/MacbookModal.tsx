@@ -108,6 +108,8 @@ const ICON_DIR = "/assets/items/laptop/desktopIcons";
 const DOCK_DIR = "/assets/items/laptop/mac-icons";
 const WALLPAPER_DEFAULT = "/assets/items/laptop/new_wallpaper.webp";
 const WALLPAPER_REVEALED = "/assets/items/laptop/wallpaper-revealed.webp";
+const WALLPAPER_CLASS =
+  "pointer-events-none absolute inset-0 -z-10 h-full min-h-screen w-full object-cover object-center";
 
 const DESKTOP_ICONS = [
   { file: "Chxxxl.webp", label: "Chxxxl", left: "80%", top: "10%" },
@@ -328,18 +330,39 @@ function AppleMark() {
 export function MacbookModal({ origin, onClose }: MacbookModalProps) {
   const desktopRef = useRef<HTMLDivElement>(null);
   const wallpaperRef = useRef<HTMLDivElement>(null);
+  const revealedWallpaperRef = useRef<HTMLImageElement>(null);
+  const mountedRef = useRef(true);
   const zCounter = useRef(40);
   const [openWindows, setOpenWindows] = useState<DesktopWindow[]>([]);
   const [activeWindowId, setActiveWindowId] = useState<string | null>(null);
   const [wallpaperRevealed, setWallpaperRevealed] = useState(false);
+  const [revealedReady, setRevealedReady] = useState(false);
   const [desktopSettled, setDesktopSettled] = useState(false);
 
-  useEffect(() => {
-    document.documentElement.classList.add("native-cursor");
-    const preload = new Image();
-    preload.src = WALLPAPER_REVEALED;
-    return () => document.documentElement.classList.remove("native-cursor");
+  const markRevealedReady = useCallback((image: HTMLImageElement) => {
+    let decoding: Promise<void>;
+    try {
+      decoding = image.decode();
+    } catch {
+      return;
+    }
+    void decoding
+      .then(() => {
+        if (mountedRef.current) setRevealedReady(true);
+      })
+      .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    document.documentElement.classList.add("native-cursor");
+    const image = revealedWallpaperRef.current;
+    if (image?.complete && image.naturalWidth > 0) markRevealedReady(image);
+    return () => {
+      mountedRef.current = false;
+      document.documentElement.classList.remove("native-cursor");
+    };
+  }, [markRevealedReady]);
 
   const openWindow = useCallback(
     (draft: Omit<DesktopWindow, "zIndex" | "offset"> & { offset?: DesktopWindow["offset"] }) => {
@@ -527,11 +550,19 @@ export function MacbookModal({ origin, onClose }: MacbookModalProps) {
         onClick={(event) => event.stopPropagation()}
       >
         <img
-          key={wallpaperRevealed ? "revealed" : "default"}
-          src={wallpaperRevealed ? WALLPAPER_REVEALED : WALLPAPER_DEFAULT}
+          src={WALLPAPER_DEFAULT}
           alt=""
           draggable={false}
-          className="pointer-events-none absolute inset-0 -z-10 h-full min-h-screen w-full object-cover object-center"
+          className={WALLPAPER_CLASS}
+        />
+        <img
+          ref={revealedWallpaperRef}
+          src={WALLPAPER_REVEALED}
+          alt=""
+          draggable={false}
+          onLoad={(event) => markRevealedReady(event.currentTarget)}
+          className={`${WALLPAPER_CLASS} transition-opacity duration-1000 motion-reduce:transition-none`}
+          style={{ opacity: wallpaperRevealed && revealedReady ? 1 : 0 }}
         />
 
         <div className="absolute inset-x-0 top-0 z-[90] flex h-8 items-center gap-3 bg-black/25 px-3 text-xs text-white/90 backdrop-blur-md">
